@@ -24,7 +24,7 @@ setup(
 	packages = ('storpool', 'storpool.spopenstack',),
 	namespace_packages = ('storpool',),
 
-	install_requires = ('oslo.concurrency>=0.3.0', 'storpool>=1.0.0',),
+	install_requires = ('storpool>=1.0.0',),
 
 	author = 'Peter Pentchev',
 	author_email = 'openstack-dev@storpool.com',

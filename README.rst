@@ -17,6 +17,11 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+1.0.2
+-----
+
+- drop the dependency on oslo_concurrency in setup.py, too
+
 1.0.1
 -----
 

@@ -20,7 +20,7 @@
 A trivial JSON key/value store protected by a lockfile.
 """
 
-from errno import ENOENT
+from errno import ENOENT, EEXIST
 from os.path import dirname
 
 import json
@@ -68,7 +68,10 @@ class SPLockedFile(object):
 				f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0600)
 				break
 			except OSError as e:
-				time.sleep(0.1)
+				if e.errno == EEXIST:
+					time.sleep(0.1)
+				else:
+					raise
 		else:
 			raise Exception('Could not lock the {f} file (using {fl})'.format(f=self._fname, fl=self._lockfname))
 		self._lockfd = f

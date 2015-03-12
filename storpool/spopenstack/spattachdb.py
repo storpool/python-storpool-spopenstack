@@ -1,6 +1,6 @@
 #
 #-
-# Copyright (c) 2014  StorPool.
+# Copyright (c) 2014, 2015  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,6 @@ import os
 import time
 
 from itertools import ifilter
-
-from oslo_concurrency.lockutils import synchronized
 
 from storpool.spconfig import SPConfig
 from storpool.spapi import Api, ApiError
@@ -66,47 +64,47 @@ class AttachDB(SPLockedJSONDB):
 	def _get_attachments_data(self):
 		return (self.get(), self.api().attachmentsList())
 
-	@synchronized('storpool-spattachdb-sync')
 	def sync(self, req_id, detached):
-		(attach_req, apiatt) = self._get_attachments_data()
+		with self:
+			(attach_req, apiatt) = self._get_attachments_data()
 
-		attach = attach_req.get(req_id, None)
-		if attach is None:
-			raise Exception('StorPoolDriver._attach_sync() invoked for unknown request {req}'.format(req=req_id))
+			attach = attach_req.get(req_id, None)
+			if attach is None:
+				raise Exception('StorPoolDriver._attach_sync() invoked for unknown request {req}'.format(req=req_id))
 
-		# OK, let's first see what *should be* attached
-		vols = {}
-		if detached is None:
-			attach_req = attach_req.itervalues()
-		else:
-			# Detaching this particular volume in this request?
-			attach_req = ifilter(lambda att: att['volume'] != detached or att['id'] != req_id, attach_req.itervalues())
-		for att in attach_req:
-			v = att['volume']
-			if v not in vols or vols[v]['rights'] < att['rights']:
-				vols[v] = { 'volume': v, 'volsnap': att.get('volsnap', False), 'rights': att['rights'] }
-
-		# OK, let's see what *is* attached
-		apiatt = filter(lambda att: att.client == self._ourId, apiatt)
-		attached = dict(map(lambda att: (att.volume, {'volume': att.volume, 'rights': 2 if att.rights == "rw" else 1, 'snapshot': att.snapshot}), apiatt))
-
-		# Right, do we need to do anything now?
-		for v in vols.itervalues():
-			n = v['volume']
-			if n in attached and attached[n]['rights'] >= v['rights']:
-				continue
-			volsnap = v['volsnap']
-			self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=v['rights'])
-
-		for v in attached.itervalues():
-			n = v['volume']
-			if n in vols:
-				volsnap = vols[n]['volsnap']
-				type = 'snapshot' if volsnap else 'volume'
-				if vols[n]['rights'] < v['rights']:
-					self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=vols[n]['rights'])
+			# OK, let's first see what *should be* attached
+			vols = {}
+			if detached is None:
+				attach_req = attach_req.itervalues()
 			else:
-				self._detach_and_wait(client=self._ourId, volume=n, volsnap=v['snapshot'])
+				# Detaching this particular volume in this request?
+				attach_req = ifilter(lambda att: att['volume'] != detached or att['id'] != req_id, attach_req.itervalues())
+			for att in attach_req:
+				v = att['volume']
+				if v not in vols or vols[v]['rights'] < att['rights']:
+					vols[v] = { 'volume': v, 'volsnap': att.get('volsnap', False), 'rights': att['rights'] }
+
+			# OK, let's see what *is* attached
+			apiatt = filter(lambda att: att.client == self._ourId, apiatt)
+			attached = dict(map(lambda att: (att.volume, {'volume': att.volume, 'rights': 2 if att.rights == "rw" else 1, 'snapshot': att.snapshot}), apiatt))
+
+			# Right, do we need to do anything now?
+			for v in vols.itervalues():
+				n = v['volume']
+				if n in attached and attached[n]['rights'] >= v['rights']:
+					continue
+				volsnap = v['volsnap']
+				self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=v['rights'])
+
+			for v in attached.itervalues():
+				n = v['volume']
+				if n in vols:
+					volsnap = vols[n]['volsnap']
+					type = 'snapshot' if volsnap else 'volume'
+					if vols[n]['rights'] < v['rights']:
+						self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=vols[n]['rights'])
+				else:
+					self._detach_and_wait(client=self._ourId, volume=n, volsnap=v['snapshot'])
 
 	def _attach_and_wait(self, client, volume, volsnap, rights):
 		if volsnap:

@@ -1,6 +1,6 @@
 #
 #-
-# Copyright (c) 2014  StorPool.
+# Copyright (c) 2014, 2015  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,11 @@ from os.path import dirname
 
 import json
 import os
+import threading
 import time
 
-from oslo_concurrency.lockutils import synchronized
+
+rlock = threading.RLock()
 
 
 class SPLockedFile(object):
@@ -36,6 +38,7 @@ class SPLockedFile(object):
 		self._lockfname = self._fname + '.splock'
 		self._lockfd = None
 		self._last = None
+		self._count = 0
 
 	def changed(self):
 		last = self._last
@@ -52,6 +55,13 @@ class SPLockedFile(object):
 		return st.st_ino != last.st_ino or st.st_mtime != last.st_mtime or st.st_size != last.st_size
 
 	def __enter__(self):
+		rlock.acquire()
+		self._count += 1
+
+		if self._count > 1:
+			assert self._lockfd is not None
+			return
+
 		assert self._lockfd is None
 		for x in xrange(10):
 			try:
@@ -64,6 +74,11 @@ class SPLockedFile(object):
 		self._lockfd = f
 
 	def __exit__(self, etype, eval, tb):
+		if self._count > 1:
+			self._count -= 1
+			rlock.release()
+			return
+
 		os.close(self._lockfd)
 		self._lockfd = None
 
@@ -79,6 +94,9 @@ class SPLockedFile(object):
 		except OSError:
 			pass
 
+		self._count -= 1
+		rlock.release()
+
 	def jsload(self):
 		with self:
 			with open(self._fname, 'r') as f:
@@ -89,33 +107,34 @@ class SPLockedFile(object):
 			with open(self._fname, 'w') as f:
 				f.write(json.dumps(obj))
 
+
 class SPLockedJSONDB(SPLockedFile):
 	def __init__(self, fname):
 		super(SPLockedJSONDB, self).__init__(fname)
 		self._data = None
 
-	@synchronized('storpool-splocked-get')
 	def get(self):
-		if self._data is None or self.changed():
-			try:
-				self._data = self.jsload()
-			except IOError as e:
-				# No such file or directory?
-				if e.errno == ENOENT:
-					self._data = {}
-				else:
-					raise
-		return self._data
+		with self:
+			if self._data is None or self.changed():
+				try:
+					self._data = self.jsload()
+				except IOError as e:
+					# No such file or directory?
+					if e.errno == ENOENT:
+						self._data = {}
+					else:
+						raise
+			return self._data
 
-	@synchronized('storpool-splocked-add-remove')
 	def add(self, key, val):
-		d = self.get()
-		d[key] = val
-		self.jsdump(d)
-
-	@synchronized('storpool-splocked-add-remove')
-	def remove(self, key):
-		d = self.get()
-		if key in d:
-			del d[key]
+		with self:
+			d = self.get()
+			d[key] = val
 			self.jsdump(d)
+
+	def remove(self, key):
+		with self:
+			d = self.get()
+			if key in d:
+				del d[key]
+				self.jsdump(d)

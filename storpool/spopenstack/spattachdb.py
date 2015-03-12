@@ -121,8 +121,17 @@ class AttachDB(SPLockedJSONDB):
 			time.sleep(1)
 
 	def _detach_and_wait(self, client, volume, volsnap):
-		# Try to detach it as a volume first
-		if volsnap:
-			self.api().volumesReassign(json=[{ 'snapshot': volume, 'detach': [client] }])
-		else:
-			self.api().volumesReassign(json=[{ 'volume': volume, 'detach': [client] }])
+		count = 10
+		while True:
+			try:
+				if volsnap:
+					self.api().volumesReassign(json=[{ 'snapshot': volume, 'detach': [client] }])
+				else:
+					self.api().volumesReassign(json=[{ 'volume': volume, 'detach': [client] }])
+				break
+			except ApiError as e:
+				if e.name == 'invalidParam' and 'is open at' in e.desc:
+					if count < 1:
+						raise
+					time.sleep(0.3)
+					count -= 1

@@ -20,7 +20,12 @@ Version history
 1.0.1
 -----
 
-- ??
+- use our own locking instead of oslo_concurrency, making it much easier
+  (or even at all possible) to work with OpenStack Juno
+- wait for all consumers of the attached StorPool volume to release it when
+  detaching it
+- wait a bit longer for a newly-attached volume to appear
+- only retry locking on a "file exists" error; any other errors are fatal
 
 1.0.0
 -----

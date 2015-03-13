@@ -17,6 +17,10 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+1.0.3
+-----
+
+
 1.0.2
 -----
 

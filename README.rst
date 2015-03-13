@@ -20,6 +20,7 @@ Version history
 1.0.3
 -----
 
+- ignore nonexistent request IDs upon detaching
 
 1.0.2
 -----

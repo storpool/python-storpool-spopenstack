@@ -70,6 +70,10 @@ class AttachDB(SPLockedJSONDB):
 
 			attach = attach_req.get(req_id, None)
 			if attach is None:
+				if detached is not None:
+					# Ach, let's just hope for the best...
+					self.LOG.warn("StorPoolDriver._attach_sync() invoked for detaching for unknown request {req}, ignored".format(req=req_id))
+					return
 				raise Exception('StorPoolDriver._attach_sync() invoked for unknown request {req}'.format(req=req_id))
 
 			# OK, let's first see what *should be* attached

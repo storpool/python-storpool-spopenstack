@@ -37,6 +37,7 @@ class AttachDB(SPLockedJSONDB):
 		self._api = None
 		self._config = None
 		self._ourId = None
+		self._volume_prefix = None
 		self.LOG = log
 
 	def config(self):
@@ -51,14 +52,20 @@ class AttachDB(SPLockedJSONDB):
 			self._api = Api(host=cfg['SP_API_HTTP_HOST'], port=cfg['SP_API_HTTP_PORT'], auth=cfg['SP_AUTH_TOKEN'])
 		return self._api
 
+	def volumePrefix(self):
+		if self._volume_prefix is None:
+			cfg = self.config()
+			self._volume_prefix = cfg.get('SP_OPENSTACK_VOLUME_PREFIX', 'os')
+		return self._volume_prefix
+
 	def volumeName(self, id):
-		return 'os--volume-{id}'.format(id=id)
+		return '{pfx}--volume-{id}'.format(pfx=self.volumePrefix(), id=id)
 
 	def volsnapName(self, id, req_id):
-		return 'os--volsnap-{id}--req-{req_id}'.format(id=id, req_id=req_id)
+		return '{pfx}--volsnap-{id}--req-{req_id}'.format(pfx=self.volumePrefix(), id=id, req_id=req_id)
 
 	def snapshotName(self, type, id, more=None):
-		return 'os--{t}--{m}--snapshot-{id}'.format(t=type, m='none' if more is None else more, id=id)
+		return '{pfx}--{t}--{m}--snapshot-{id}'.format(pfx=self.volumePrefix(), t=type, m='none' if more is None else more, id=id)
 
 	# TODO: cache at least the API attachments data
 	def _get_attachments_data(self):

@@ -21,6 +21,9 @@ Version history
 -----
 
 - ignore nonexistent request IDs upon detaching
+- allow the default "os" name prefix for volumes created by the OpenStack tools
+  to be overridden by the storpool.conf file's new SP_OPENSTACK_VOLUME_PREFIX
+  setting
 
 1.0.2
 -----

@@ -24,6 +24,9 @@ Version history
 - allow the default "os" name prefix for volumes created by the OpenStack tools
   to be overridden by the storpool.conf file's new SP_OPENSTACK_VOLUME_PREFIX
   setting
+- raise a specific exception when a volume is still in use and may not be
+  detached so that the Nova attachment driver may raise a specific exception in
+  its turn
 
 1.0.2
 -----

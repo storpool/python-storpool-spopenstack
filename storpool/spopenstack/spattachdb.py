@@ -31,10 +31,6 @@ from storpool.spapi import Api, ApiError
 from splocked import SPLockedJSONDB
 
 
-class AttachmentInUse(Exception):
-	pass
-
-
 class AttachDB(SPLockedJSONDB):
 	def __init__(self, fname='/var/spool/openstack-storpool/openstack-attach.json', log=None):
 		super(AttachDB, self).__init__(fname)
@@ -139,14 +135,22 @@ class AttachDB(SPLockedJSONDB):
 		count = 10
 		while True:
 			try:
+				force = (count == 0)
 				if volsnap:
-					self.api().volumesReassign(json=[{ 'snapshot': volume, 'detach': [client] }])
+					self.api().volumesReassign(json=[{
+						'snapshot': volume,
+						'detach': [client],
+						'force': force
+					}])
 				else:
-					self.api().volumesReassign(json=[{ 'volume': volume, 'detach': [client] }])
+					self.api().volumesReassign(json=[{
+						'volume': volume,
+						'detach': [client],
+						'force': force
+					}])
 				break
 			except ApiError as e:
 				if e.name == 'invalidParam' and 'is open at' in e.desc:
-					if count < 1:
-						raise AttachmentInUse(e.desc)
+					assert count > 0
 					time.sleep(0.3)
 					count -= 1

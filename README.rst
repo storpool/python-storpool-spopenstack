@@ -17,6 +17,13 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+2.0.0
+-----
+
+- instead of raising the AttachmentInUse exception, forcibly detach
+  the volume on the last attempt
+- remove the now unused AttachmentInUse exception
+
 1.0.3
 -----
 

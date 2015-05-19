@@ -21,6 +21,7 @@ Version history
 -----
 
 - add the remove_keys() method to the SPLockedJSONDB class
+- remove stale requests from our openstack-attach.json cache file
 
 2.0.0
 -----

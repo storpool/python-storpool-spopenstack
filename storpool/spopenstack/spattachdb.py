@@ -23,6 +23,7 @@ Helper routines for the StorPool drivers in the OpenStack codebase.
 import os
 import time
 
+from collections import defaultdict
 from itertools import ifilter
 
 from storpool.spconfig import SPConfig
@@ -85,13 +86,16 @@ class AttachDB(SPLockedJSONDB):
 
 			# OK, let's first see what *should be* attached
 			vols = {}
+			all_vols = { v.name: True for v in self.api().volumesList() }
 			if detached is None:
 				attach_req = attach_req.itervalues()
 			else:
 				# Detaching this particular volume in this request?
 				attach_req = ifilter(lambda att: att['volume'] != detached or att['id'] != req_id, attach_req.itervalues())
+			vol_to_reqs = defaultdict(list)
 			for att in attach_req:
 				v = att['volume']
+				vol_to_reqs[v].append(att['id'])
 				if v not in vols or vols[v]['rights'] < att['rights']:
 					vols[v] = { 'volume': v, 'volsnap': att.get('volsnap', False), 'rights': att['rights'] }
 
@@ -100,12 +104,24 @@ class AttachDB(SPLockedJSONDB):
 			attached = dict(map(lambda att: (att.volume, {'volume': att.volume, 'rights': 2 if att.rights == "rw" else 1, 'snapshot': att.snapshot}), apiatt))
 
 			# Right, do we need to do anything now?
+			vols_to_remove = []
 			for v in vols.itervalues():
 				n = v['volume']
 				if n in attached and attached[n]['rights'] >= v['rights']:
 					continue
+				if v['volume'] not in all_vols:
+					vols_to_remove.append(v['volume'])
+					continue
 				volsnap = v['volsnap']
 				self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=v['rights'])
+
+			# Clean up stale volume assignments
+			if vols_to_remove:
+				reqs_to_remove = []
+				for v in vols_to_remove:
+					reqs_to_remove.extend(vol_to_reqs[v])
+				if reqs_to_remove:
+					self.remove_keys(reqs_to_remove)
 
 			for v in attached.itervalues():
 				n = v['volume']

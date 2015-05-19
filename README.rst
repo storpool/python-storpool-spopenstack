@@ -20,6 +20,8 @@ Version history
 2.1.0
 -----
 
+- add the remove_keys() method to the SPLockedJSONDB class
+
 2.0.0
 -----
 

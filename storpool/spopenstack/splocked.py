@@ -136,8 +136,15 @@ class SPLockedJSONDB(SPLockedFile):
 			self.jsdump(d)
 
 	def remove(self, key):
+		self.remove_keys([key])
+
+	def remove_keys(self, keys):
 		with self:
 			d = self.get()
-			if key in d:
-				del d[key]
+			changed = False
+			for key in keys:
+				if key in d:
+					del d[key]
+					changed = True
+			if changed:
 				self.jsdump(d)

@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
 	name = 'storpool.spopenstack',
-	version = '2.1.0_20150519.1',
+	version = '2.1.0',
 	packages = ('storpool', 'storpool.spopenstack',),
 	namespace_packages = ('storpool',),
 

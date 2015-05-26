@@ -17,6 +17,11 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+2.1.1
+-----
+
+- do not detach volumes with names that do not start with our prefix!
+
 2.1.0
 -----
 

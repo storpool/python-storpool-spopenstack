@@ -70,7 +70,9 @@ class AttachDB(SPLockedJSONDB):
 
 	# TODO: cache at least the API attachments data
 	def _get_attachments_data(self):
-		return (self.get(), self.api().attachmentsList())
+		pfx = self.volumePrefix()
+		attached = filter(lambda att: att.volume.startswith(pfx), self.api().attachmentsList())
+		return (self.get(), attached)
 
 	def sync(self, req_id, detached):
 		with self:

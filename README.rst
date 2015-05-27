@@ -21,6 +21,7 @@ Version history
 -----
 
 - do not detach volumes with names that do not start with our prefix!
+- do not treat snapshot attachment requests as stale
 
 2.1.0
 -----

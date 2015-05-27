@@ -88,7 +88,6 @@ class AttachDB(SPLockedJSONDB):
 
 			# OK, let's first see what *should be* attached
 			vols = {}
-			all_vols = { v.name: True for v in self.api().volumesList() }
 			if detached is None:
 				attach_req = attach_req.itervalues()
 			else:
@@ -106,15 +105,17 @@ class AttachDB(SPLockedJSONDB):
 			attached = dict(map(lambda att: (att.volume, {'volume': att.volume, 'rights': 2 if att.rights == "rw" else 1, 'snapshot': att.snapshot}), apiatt))
 
 			# Right, do we need to do anything now?
+			all_vols = { v.name: True for v in self.api().volumesList() }
+			all_sns = { s.name: True for s in self.api().snapshotsList() }
 			vols_to_remove = []
 			for v in vols.itervalues():
 				n = v['volume']
 				if n in attached and attached[n]['rights'] >= v['rights']:
 					continue
-				if v['volume'] not in all_vols:
+				volsnap = v['volsnap']
+				if v['volume'] not in (all_sns if volsnap else all_vols):
 					vols_to_remove.append(v['volume'])
 					continue
-				volsnap = v['volsnap']
 				self._attach_and_wait(client=self._ourId, volume=n, volsnap=volsnap, rights=v['rights'])
 
 			# Clean up stale volume assignments

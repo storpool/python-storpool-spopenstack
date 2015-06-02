@@ -22,6 +22,7 @@ Version history
 
 - do not detach volumes with names that do not start with our prefix!
 - do not treat snapshot attachment requests as stale
+- do not wait quite that long before force-detaching a volume
 
 2.1.0
 -----

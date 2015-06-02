@@ -171,5 +171,5 @@ class AttachDB(SPLockedJSONDB):
 			except ApiError as e:
 				if e.name == 'invalidParam' and 'is open at' in e.desc:
 					assert count > 0
-					time.sleep(0.3)
+					time.sleep(0.2)
 					count -= 1

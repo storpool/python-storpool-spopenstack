@@ -1,6 +1,6 @@
 #
-#-
-# Copyright (c) 2014, 2015  StorPool.
+# -
+# Copyright (c) 2014, 2015, 2019  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,16 @@
 from setuptools import setup, find_packages
 
 setup(
-	name = 'storpool.spopenstack',
-	version = '2.1.1',
-	packages = ('storpool', 'storpool.spopenstack',),
-	namespace_packages = ('storpool',),
-
-	install_requires = ('storpool>=1.0.0',),
-
-	author = 'Peter Pentchev',
-	author_email = 'openstack-dev@storpool.com',
-	description = 'OpenStack helpers for the StorPool API',
-	license = 'Apache 2.0 License',
-	keywords = 'storpool StorPool openstack OpenStack',
-	url = 'http://www.storpool.com/',
-
-	zip_safe = True,
+    name="storpool.spopenstack",
+    version="2.1.1",
+    packages=("storpool", "storpool.spopenstack"),
+    namespace_packages=("storpool",),
+    install_requires=("storpool>=1.0.0",),
+    author="Peter Pentchev",
+    author_email="openstack-dev@storpool.com",
+    description="OpenStack helpers for the StorPool API",
+    license="Apache 2.0 License",
+    keywords="storpool StorPool openstack OpenStack",
+    url="http://www.storpool.com/",
+    zip_safe=True,
 )

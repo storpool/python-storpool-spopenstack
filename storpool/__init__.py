@@ -1,6 +1,6 @@
 #
-#-
-# Copyright (c) 2014  StorPool.
+# -
+# Copyright (c) 2014, 2019  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-__import__('pkg_resources').declare_namespace(__name__)
+__import__("pkg_resources").declare_namespace(__name__)

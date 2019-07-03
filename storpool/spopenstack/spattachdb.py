@@ -24,12 +24,11 @@ import os
 import time
 
 from collections import defaultdict
-from itertools import ifilter
 
 from storpool.spconfig import SPConfig
 from storpool.spapi import Api, ApiError
 
-from splocked import SPLockedJSONDB
+from .splocked import SPLockedJSONDB
 
 
 class AttachDB(SPLockedJSONDB):
@@ -113,14 +112,14 @@ class AttachDB(SPLockedJSONDB):
             # OK, let's first see what *should be* attached
             vols = {}
             if detached is None:
-                attach_req = attach_req.itervalues()
+                attach_req = attach_req.values()
             else:
                 # Detaching this particular volume in this request?
-                attach_req = ifilter(
-                    lambda att: att["volume"] != detached
-                    or att["id"] != req_id,
-                    attach_req.itervalues(),
-                )
+                attach_req = [
+                    att
+                    for att in attach_req.values()
+                    if att["volume"] != detached or att["id"] != req_id
+                ]
             vol_to_reqs = defaultdict(list)
             for att in attach_req:
                 v = att["volume"]
@@ -152,7 +151,7 @@ class AttachDB(SPLockedJSONDB):
             all_vols = {v.name: True for v in self.api().volumesList()}
             all_sns = {s.name: True for s in self.api().snapshotsList()}
             vols_to_remove = []
-            for v in vols.itervalues():
+            for v in vols.values():
                 n = v["volume"]
                 if n in attached and attached[n]["rights"] >= v["rights"]:
                     continue
@@ -175,7 +174,7 @@ class AttachDB(SPLockedJSONDB):
                 if reqs_to_remove:
                     self.remove_keys(reqs_to_remove)
 
-            for v in attached.itervalues():
+            for v in attached.values():
                 n = v["volume"]
                 if n in vols:
                     volsnap = vols[n]["volsnap"]
@@ -206,7 +205,7 @@ class AttachDB(SPLockedJSONDB):
                 json=[{"volume": volume, mode: [client]}]
             )
         devpath = "/dev/storpool/" + volume
-        for i in xrange(10):
+        for i in range(10):
             if os.path.exists(devpath):
                 break
             time.sleep(1)

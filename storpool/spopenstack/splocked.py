@@ -66,7 +66,7 @@ class SPLockedFile(object):
             return
 
         assert self._lockfd is None
-        for x in xrange(100):
+        for x in range(100):
             try:
                 f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0o600)
                 break

@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-from spattachdb import AttachDB  # noqa
+from .spattachdb import AttachDB  # noqa

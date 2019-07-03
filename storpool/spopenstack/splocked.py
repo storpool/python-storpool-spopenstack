@@ -21,7 +21,6 @@ A trivial JSON key/value store protected by a lockfile.
 """
 
 from errno import ENOENT, EEXIST
-from os.path import dirname
 
 import json
 import os

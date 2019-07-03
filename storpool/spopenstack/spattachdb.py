@@ -179,7 +179,6 @@ class AttachDB(SPLockedJSONDB):
                 n = v["volume"]
                 if n in vols:
                     volsnap = vols[n]["volsnap"]
-                    type = "snapshot" if volsnap else "volume"
                     if vols[n]["rights"] < v["rights"]:
                         self._attach_and_wait(
                             client=self._ourId,

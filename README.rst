@@ -17,6 +17,14 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+2.2.0
+-----
+
+- add unit tests
+- reformat the source code using black
+- fix some flake8 and pylint nits
+- support Python 3
+
 2.1.1
 -----
 

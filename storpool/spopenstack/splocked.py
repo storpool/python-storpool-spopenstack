@@ -20,8 +20,7 @@
 A trivial JSON key/value store protected by a lockfile.
 """
 
-from errno import ENOENT, EEXIST
-
+import errno
 import json
 import os
 import threading
@@ -71,7 +70,7 @@ class SPLockedFile(object):
                 f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0o600)
                 break
             except OSError as e:
-                if e.errno == EEXIST:
+                if e.errno == errno.EEXIST:
                     time.sleep(0.1)
                 else:
                     raise
@@ -130,7 +129,7 @@ class SPLockedJSONDB(SPLockedFile):
                     self._data = self.jsload()
                 except IOError as e:
                     # No such file or directory?
-                    if e.errno == ENOENT:
+                    if e.errno == errno.ENOENT:
                         self._data = {}
                     else:
                         raise

@@ -16,9 +16,10 @@
 # limitations under the License.
 #
 
-from setuptools import setup
+import setuptools
 
-setup(
+
+setuptools.setup(
     name="storpool.spopenstack",
     version="2.1.1",
     packages=("storpool", "storpool.spopenstack"),

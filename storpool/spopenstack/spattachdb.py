@@ -20,18 +20,16 @@
 Helper routines for the StorPool drivers in the OpenStack codebase.
 """
 
+import collections
 import os
 import time
 
-from collections import defaultdict
+from storpool import spconfig, spapi
 
-from storpool.spconfig import SPConfig
-from storpool.spapi import Api, ApiError
-
-from .splocked import SPLockedJSONDB
+from . import splocked
 
 
-class AttachDB(SPLockedJSONDB):
+class AttachDB(splocked.SPLockedJSONDB):
     def __init__(
         self,
         fname="/var/spool/openstack-storpool/openstack-attach.json",
@@ -46,14 +44,14 @@ class AttachDB(SPLockedJSONDB):
 
     def config(self):
         if self._config is None:
-            self._config = SPConfig()
+            self._config = spconfig.SPConfig()
             self._ourId = int(self._config["SP_OURID"])
         return self._config
 
     def api(self):
         if self._api is None:
             cfg = self.config()
-            self._api = Api(
+            self._api = spapi.Api(
                 host=cfg["SP_API_HTTP_HOST"],
                 port=cfg["SP_API_HTTP_PORT"],
                 auth=cfg["SP_AUTH_TOKEN"],
@@ -120,7 +118,7 @@ class AttachDB(SPLockedJSONDB):
                     for att in attach_req.values()
                     if att["volume"] != detached or att["id"] != req_id
                 ]
-            vol_to_reqs = defaultdict(list)
+            vol_to_reqs = collections.defaultdict(list)
             for att in attach_req:
                 v = att["volume"]
                 vol_to_reqs[v].append(att["id"])
@@ -193,7 +191,7 @@ class AttachDB(SPLockedJSONDB):
     def _attach_and_wait(self, client, volume, volsnap, rights):
         if volsnap:
             if rights > 1:
-                raise ApiError(
+                raise spapi.ApiError(
                     "StorPool: cannot attach a snapshot in read/write mode"
                 )
             self.api().volumesReassign(
@@ -236,7 +234,7 @@ class AttachDB(SPLockedJSONDB):
                         ]
                     )
                 break
-            except ApiError as e:
+            except spapi.ApiError as e:
                 if e.name == "invalidParam" and "is open at" in e.desc:
                     assert count > 0
                     time.sleep(0.2)

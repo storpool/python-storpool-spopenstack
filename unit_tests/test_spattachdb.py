@@ -16,6 +16,8 @@
 #
 """ Test the classes in the storpool.spopenstack.spattachdb module. """
 
+from __future__ import print_function
+
 import json as jsonmod
 import sys
 
@@ -23,13 +25,15 @@ import mock
 import pytest
 import six
 
+from . import sp_test_import
 from . import utils
-from .mock_storpool import spapi, spconfig
 
-sys.modules["storpool.spapi"] = spapi
-sys.modules["storpool.spconfig"] = spconfig
+sys.meta_path.insert(0, sp_test_import.SPTestModuleFinder)
 
 # pylint: disable=wrong-import-position,wrong-import-order
+from storpool import spapi  # noqa: E402 pylint: disable=no-name-in-module
+from storpool import spconfig  # noqa: E402 pylint: disable=no-name-in-module
+
 from storpool.spopenstack import spattachdb  # noqa: E0402
 
 
@@ -81,8 +85,7 @@ def test_trivial(tempf, att):
     cfg_dict["SP_OPENSTACK_VOLUME_PREFIX"] = "lab"
     cfg_dict["SP_API_HTTP_PORT"] = "8000"
     with mock.patch(
-        "unit_tests.mock_storpool.spconfig.get_config_dictionary",
-        new=lambda: cfg_dict,
+        "storpool.spconfig.get_config_dictionary", new=lambda: cfg_dict
     ):
         natt = spattachdb.AttachDB(fname=str(tempf), log=att.LOG)
         napi = natt.api()

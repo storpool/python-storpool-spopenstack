@@ -53,7 +53,7 @@ class AttachDB(splocked.SPLockedJSONDB):
             cfg = self.config()
             self._api = spapi.Api(
                 host=cfg["SP_API_HTTP_HOST"],
-                port=cfg["SP_API_HTTP_PORT"],
+                port=int(cfg["SP_API_HTTP_PORT"]),
                 auth=cfg["SP_AUTH_TOKEN"],
             )
         return self._api

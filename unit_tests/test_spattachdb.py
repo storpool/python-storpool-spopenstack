@@ -64,7 +64,7 @@ def test_trivial(tempf, att):
     assert cfg_second is cfg
 
     api = att.api()
-    assert api.port == "81"
+    assert api.port == 81
     api_second = att.api()
     assert api_second is api
 
@@ -83,13 +83,13 @@ def test_trivial(tempf, att):
     cfg_dict = spconfig.get_config_dictionary()
     cfg_dict["SP_OURID"] = "1"
     cfg_dict["SP_OPENSTACK_VOLUME_PREFIX"] = "lab"
-    cfg_dict["SP_API_HTTP_PORT"] = "8000"
+    cfg_dict["SP_API_HTTP_PORT"] = 8000
     with mock.patch(
         "storpool.spconfig.get_config_dictionary", new=lambda: cfg_dict
     ):
         natt = spattachdb.AttachDB(fname=str(tempf), log=att.LOG)
         napi = natt.api()
-        assert napi.port == "8000"
+        assert napi.port == 8000
 
         assert natt.volumePrefix() == "lab"
         assert natt.volumeName("feed") == "lab--volume-feed"

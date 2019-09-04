@@ -50,12 +50,7 @@ class AttachDB(splocked.SPLockedJSONDB):
 
     def api(self):
         if self._api is None:
-            cfg = self.config()
-            self._api = spapi.Api(
-                host=cfg["SP_API_HTTP_HOST"],
-                port=int(cfg["SP_API_HTTP_PORT"]),
-                auth=cfg["SP_AUTH_TOKEN"],
-            )
+            self._api = spapi.Api.fromConfig(self.config())
         return self._api
 
     def volumePrefix(self):

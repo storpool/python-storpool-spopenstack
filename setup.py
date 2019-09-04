@@ -24,7 +24,7 @@ setuptools.setup(
     version="2.2.0",
     packages=("storpool", "storpool.spopenstack"),
     namespace_packages=("storpool",),
-    install_requires=("storpool>=1.0.0",),
+    install_requires=("storpool>=4.0.0",),
     author="Peter Pentchev",
     author_email="openstack-dev@storpool.com",
     description="OpenStack helpers for the StorPool API",

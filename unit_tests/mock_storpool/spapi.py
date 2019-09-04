@@ -82,6 +82,16 @@ class Api(object):
         self.snapshots = []
         self.attachments = []
 
+    @classmethod
+    def fromConfig(cls, cfg, **kwargs):  # pylint: disable=invalid-name
+        """ Initialize an API bindings object with the supplied config. """
+        return cls(
+            host=cfg["SP_API_HTTP_HOST"],
+            port=int(cfg["SP_API_HTTP_PORT"]),
+            auth=cfg["SP_AUTH_TOKEN"],
+            **kwargs
+        )
+
     def volumesReassign(self, json):  # pylint: disable=invalid-name
         """ Record the arguments passed to a volumesReassign() call. """
         self.reassign.append(json)

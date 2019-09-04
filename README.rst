@@ -17,6 +17,15 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+2.2.1
+-----
+
+- do not pass a Unicode string argument as a port "number" to the StorPool
+  API bindings object
+- use the storpool.spapi.Api.fromConfig() method and consequently bump
+  the dependency on the "storpool" module to version 4.0.0 or above
+
+
 2.2.0
 -----
 

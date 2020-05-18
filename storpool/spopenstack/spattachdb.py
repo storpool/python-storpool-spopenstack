@@ -1,6 +1,6 @@
 #
 # -
-# Copyright (c) 2014, 2015, 2019  StorPool.
+# Copyright (c) 2014, 2015, 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -158,14 +158,6 @@ class AttachDB(splocked.SPLockedJSONDB):
                     volsnap=volsnap,
                     rights=v["rights"],
                 )
-
-            # Clean up stale volume assignments
-            if vols_to_remove:
-                reqs_to_remove = []
-                for v in vols_to_remove:
-                    reqs_to_remove.extend(vol_to_reqs[v])
-                if reqs_to_remove:
-                    self.remove_keys(reqs_to_remove)
 
             for v in attached.values():
                 n = v["volume"]

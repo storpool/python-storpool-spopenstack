@@ -217,7 +217,8 @@ def test_sync(tempf, att):
             assert det_wait.call_count == 0
 
     assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == {
-        "a": {"id": "a", "volume": "os-vol-a", "volsnap": False, "rights": 2}
+        "a": {"id": "a", "volume": "os-vol-a", "volsnap": False, "rights": 2},
+        "b": {"id": "b", "volume": "os-snap-b", "volsnap": True, "rights": 1},
     }
     tempf.write_text(contents, encoding="UTF-8")
     assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata

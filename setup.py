@@ -1,6 +1,6 @@
 #
 # -
-# Copyright (c) 2014, 2015, 2019  StorPool.
+# Copyright (c) 2014, 2015, 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@ import setuptools
 
 setuptools.setup(
     name="storpool.spopenstack",
-    version="2.2.1",
+    version="3.0.0",
     packages=("storpool", "storpool.spopenstack"),
     namespace_packages=("storpool",),
     install_requires=("storpool>=4.0.0",),

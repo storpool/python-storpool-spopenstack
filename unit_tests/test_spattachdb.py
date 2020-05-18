@@ -21,7 +21,6 @@ from __future__ import print_function
 import json as jsonmod
 import sys
 
-import mock
 import pytest
 import six
 
@@ -31,6 +30,11 @@ from . import utils
 sys.meta_path.insert(0, sp_test_import.SPTestModuleFinder)
 
 # pylint: disable=wrong-import-position,wrong-import-order
+if sys.version_info[0] < 3:
+    import mock  # pylint: disable=import-error
+else:
+    from unittest import mock
+
 from storpool import spapi  # noqa: E402 pylint: disable=no-name-in-module
 from storpool import spconfig  # noqa: E402 pylint: disable=no-name-in-module
 

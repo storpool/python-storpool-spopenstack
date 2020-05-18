@@ -19,8 +19,6 @@
 import json
 import sys
 
-import mock
-
 from . import utils
 from .mock_storpool import spapi, spconfig
 
@@ -28,6 +26,11 @@ sys.modules["storpool.spapi"] = spapi
 sys.modules["storpool.spconfig"] = spconfig
 
 # pylint: disable=wrong-import-position,wrong-import-order
+if sys.version_info[0] < 3:
+    import mock  # pylint: disable=import-error
+else:
+    from unittest import mock
+
 from storpool.spopenstack import splocked  # noqa: E402
 
 

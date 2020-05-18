@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019  StorPool.
+# Copyright (c) 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ sys.modules["storpool.spapi"] = spapi
 sys.modules["storpool.spconfig"] = spconfig
 
 # pylint: disable=wrong-import-position,wrong-import-order
-from storpool.spopenstack import splocked  # noqa: E0402
+from storpool.spopenstack import splocked  # noqa: E402
 
 
 @utils.with_tempdir

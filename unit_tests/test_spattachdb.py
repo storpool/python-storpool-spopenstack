@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019  StorPool.
+# Copyright (c) 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ sys.meta_path.insert(0, sp_test_import.SPTestModuleFinder)
 from storpool import spapi  # noqa: E402 pylint: disable=no-name-in-module
 from storpool import spconfig  # noqa: E402 pylint: disable=no-name-in-module
 
-from storpool.spopenstack import spattachdb  # noqa: E0402
+from storpool.spopenstack import spattachdb  # noqa: E402
 
 
 def with_attachdb(func):

@@ -20,6 +20,11 @@ Version history
 3.0.0
 -----
 
+- INCOMPATIBLE CHANGE: do not detach unrecognized StorPool volumes when
+  the SPAttachDB.sync() method is invoked to allow for OpenStack services
+  running in different containers on the same physical host
+- do not use external mock and pathlib libraries for the Python 3.x tests
+
 
 2.2.1
 -----

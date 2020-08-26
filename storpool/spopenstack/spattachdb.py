@@ -120,8 +120,11 @@ class AttachDB(splocked.SPLockedJSONDB):
                 if v not in vols or vols[v]["rights"] < att["rights"]:
                     vols[v] = {
                         "volume": v,
-                        "volsnap": att.get("volsnap", False),
+                        "type": "n/a",
+                        "id": "n/a",
                         "rights": att["rights"],
+                        "volsnap": att.get("volsnap", False),
+                        "remove_on_detach": att.get("remove_on_detach", False),
                     }
 
             # OK, let's see what *is* attached
@@ -129,8 +132,11 @@ class AttachDB(splocked.SPLockedJSONDB):
             attached = {
                 att.volume: {
                     "volume": att.volume,
+                    "type": "n/a",
+                    "id": "n/a",
                     "rights": 2 if att.rights == "rw" else 1,
-                    "snapshot": att.snapshot,
+                    "volsnap": att.snapshot,
+                    "remove_on_detach": False,
                 }
                 for att in apiatt
             }
@@ -167,7 +173,7 @@ class AttachDB(splocked.SPLockedJSONDB):
                         )
                 else:
                     self._detach_and_wait(
-                        client=self._ourId, volume=n, volsnap=v["snapshot"]
+                        client=self._ourId, volume=n, volsnap=v["volsnap"]
                     )
 
     def _attach_and_wait(self, client, volume, volsnap, rights):

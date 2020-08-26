@@ -315,12 +315,6 @@ def test_sync(tempf, att):
                 "volsnap": False,
                 "rights": 2,
             },
-            "b": {
-                "id": "b",
-                "volume": "os-snap-b",
-                "volsnap": True,
-                "rights": 1,
-            },
         },
     )
 

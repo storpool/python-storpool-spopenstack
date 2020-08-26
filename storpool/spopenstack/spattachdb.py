@@ -191,6 +191,14 @@ class AttachDB(splocked.SPLockedJSONDB):
                     rights=v["rights"],
                 )
 
+            # Clean up stale volume assignments
+            if vols_to_remove:
+                reqs_to_remove = []
+                for vname in vols_to_remove:
+                    reqs_to_remove.extend(vol_to_reqs[vname])
+                if reqs_to_remove:
+                    self.remove_keys(reqs_to_remove)
+
             for v in attached.values():
                 n = v["volume"]
                 if n in vols:

@@ -20,6 +20,14 @@ Version history
 3.0.1
 -----
 
+- Really implement the "do not detach unrecognized StorPool volumes" bugfix
+  from version 3.0.0; the solution there was incomplete
+- Recognize the fact that an AttachDB object is never ever instantiated
+  without a logger and make the logger parameter non-optional
+- Add type hints and fix some minor type mismatches found by the mypy tool
+- Refactor the tests for the AttachDB.sync() method
+- Apply some minor style improvements
+
 3.0.0
 -----
 

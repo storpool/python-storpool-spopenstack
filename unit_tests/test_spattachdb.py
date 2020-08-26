@@ -21,13 +21,23 @@ from __future__ import print_function
 import json as jsonmod
 import sys
 
+try:
+    from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+    CallArgsTupleFull = Tuple[str, List[Any], Dict[str, Any]]
+    CallArgsTupleShort = Tuple[List[Any], Dict[str, Any]]
+
+    CallArgsTuple = Union[CallArgsTupleShort, CallArgsTupleFull]
+except ImportError:
+    pass
+
 import pytest
 import six
 
 from . import sp_test_import
 from . import utils
 
-sys.meta_path.insert(0, sp_test_import.SPTestModuleFinder)
+sys.meta_path.insert(0, sp_test_import.SPTestModuleFinder)  # type: ignore
 
 # pylint: disable=wrong-import-position,wrong-import-order
 if sys.version_info[0] < 3:
@@ -41,11 +51,14 @@ from storpool import spconfig  # noqa: E402 pylint: disable=no-name-in-module
 from storpool.spopenstack import spattachdb  # noqa: E402
 
 
-def with_attachdb(func):
+def with_attachdb(
+    func,  # type: Callable[[utils.pathlib.Path, spattachdb.AttachDB], None]
+):  # type: (...) -> Callable[[], None]
     """ Prepare the environment for an AttachDB test. """
 
     @utils.with_tempdir
     def wrapped(tempd):
+        # type: (utils.pathlib.Path) -> None
         """ Create a couple of objects, invoke the function. """
         tempf = tempd / "attach.json"
         tempf.write_text(u"{}", encoding="UTF-8")
@@ -61,6 +74,7 @@ def with_attachdb(func):
 
 @with_attachdb
 def test_trivial(tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     """ Test some trivial behavior of the AttachDB class. """
     cfg = att.config()
     assert isinstance(cfg, spconfig.SPConfig)
@@ -87,7 +101,7 @@ def test_trivial(tempf, att):
     cfg_dict = spconfig.get_config_dictionary()
     cfg_dict["SP_OURID"] = "1"
     cfg_dict["SP_OPENSTACK_VOLUME_PREFIX"] = "lab"
-    cfg_dict["SP_API_HTTP_PORT"] = 8000
+    cfg_dict["SP_API_HTTP_PORT"] = "8000"
     with mock.patch(
         "storpool.spconfig.get_config_dictionary", new=lambda: cfg_dict
     ):
@@ -112,6 +126,7 @@ def test_trivial(tempf, att):
 
 @with_attachdb
 def test_attach_and_wait(_tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     # pylint: disable=protected-access
     """ Test the "wait for the volume to be attached" method. """
     volname = att.volumeName("beef")
@@ -119,47 +134,51 @@ def test_attach_and_wait(_tempf, att):
     state = {"count": 0}
 
     def mock_exists(path):
+        # type: (str) -> bool
         """ Make sure os.path.exists() is called for the right volume. """
         assert path == spname
         state["count"] += 1
         return False
 
     def mock_sleep(interval):
+        # type: (int) -> None
         """ No need to waste time sleeping. """
         assert interval > 0
         assert interval < 10
 
     with mock.patch("os.path.exists", new=mock_exists):
         with mock.patch("time.sleep", new=mock_sleep):
-            att._attach_and_wait("42", volname, False, 2)
+            att._attach_and_wait(42, volname, False, 2)
 
     assert state["count"] == 10
-    assert att.api().reassign == [[{"volume": volname, "rw": ["42"]}]]
+    assert att.api().reassign == [[{"volume": volname, "rw": [42]}]]
 
     with pytest.raises(spapi.ApiError):
-        att._attach_and_wait("42", volname, True, 2)
+        att._attach_and_wait(42, volname, True, 2)
 
     with mock.patch("os.path.exists", new=mock_exists):
         with mock.patch("time.sleep", new=mock_sleep):
-            att._attach_and_wait("43", volname, True, 1)
+            att._attach_and_wait(43, volname, True, 1)
 
     assert state["count"] == 20
     assert att.api().reassign == [
-        [{"volume": volname, "rw": ["42"]}],
-        [{"snapshot": volname, "ro": ["43"]}],
+        [{"volume": volname, "rw": [42]}],
+        [{"snapshot": volname, "ro": [43]}],
     ]
 
 
 @with_attachdb
 def test_detach_and_wait(_tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     # pylint: disable=protected-access
     """ Test the "wait for a volume to go away" method. """
-    client = "42"
+    client = 42
     volname = att.volumeName("beef")
     state = {"count": 0}
     expected = {"volume": volname, "detach": [client], "force": False}
 
     def mock_reassign(json):
+        # type: (List[spapi.AttachmentDescDict]) -> None
         """ Mock a volumesReassign() invocation. """
         assert state["count"] < 11
         expected["force"] = state["count"] == 10
@@ -177,12 +196,13 @@ def test_detach_and_wait(_tempf, att):
             )
 
     def mock_sleep(interval):
+        # type: (int) -> None
         """ No need to waste time sleeping. """
         assert interval > 0
         assert interval < 10
 
     with mock.patch("time.sleep", new=mock_sleep):
-        att.api().volumesReassign = mock_reassign
+        att.api().volumesReassign = mock_reassign  # type: ignore
         att._detach_and_wait(client, volname, False)
         assert state["count"] == 11
 
@@ -193,11 +213,12 @@ def test_detach_and_wait(_tempf, att):
 
 
 def compare_attach(item):
+    # type: (CallArgsTuple) -> Tuple[Any, Any, Any, Any]
     """Tweak the arguments of a SPAttachDB._attach_and_wait() call."""
     if len(item) == 2:
-        args, kwargs = item
+        args, kwargs = item  # type: ignore
     else:
-        args, kwargs = item[1], item[2]
+        args, kwargs = item[1], item[2]  # type: ignore
     assert (args, item) == ((), item)
 
     return (
@@ -209,11 +230,12 @@ def compare_attach(item):
 
 
 def compare_detach(item):
+    # type: (CallArgsTuple) -> Tuple[Any, Any, Any]
     """Tweak the arguments of a SPAttachDB._detach_and_wait() call."""
     if len(item) == 2:
-        args, kwargs = item
+        args, kwargs = item  # type: ignore
     else:
-        args, kwargs = item[1], item[2]
+        args, kwargs = item[1], item[2]  # type: ignore
     assert (args, item) == ((), item)
 
     return (
@@ -225,6 +247,7 @@ def compare_detach(item):
 
 @with_attachdb
 def test_sync(tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     """ Test the main purpose of AttachDB: the sync() method. """
 
     voldata = {
@@ -245,13 +268,13 @@ def test_sync(tempf, att):
     assert tempf.read_text(encoding="UTF-8") == contents
 
     def run_sync(  # pylint: disable=too-many-arguments
-        args,
-        expected,
-        volumes=None,
-        snapshots=None,
-        attachments=None,
-        expected_json=None,
-    ):
+        args,  # type: Tuple[str, Optional[str]]
+        expected,  # type: Tuple[List[mock.call], List[mock.call]]
+        volumes=None,  # type: Optional[List[spapi.VolumeSummary]]
+        snapshots=None,  # type: Optional[List[spapi.SnapshotSummary]]
+        attachments=None,  # type: Optional[List[spapi.AttachmentDesc]]
+        expected_json=None,  # type: Optional[Any]
+    ):  # type: (...) -> None
         """Run att.sync() in the specified environment."""
 
         with mock.patch.object(att, "_attach_and_wait") as att_wait:
@@ -284,7 +307,7 @@ def test_sync(tempf, att):
             [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
             [],
         ),
-        volumes=[spapi.Volume("os-vol-a")],
+        volumes=[spapi.VolumeSummary("os-vol-a")],
         expected_json={
             "a": {
                 "id": "a",
@@ -304,13 +327,16 @@ def test_sync(tempf, att):
     run_sync(
         ("a", None),
         ([], []),
-        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("ignore"),],
-        snapshots=[spapi.Snapshot("os-snap-b")],
+        volumes=[
+            spapi.VolumeSummary("os-vol-a"),
+            spapi.VolumeSummary("ignore"),
+        ],
+        snapshots=[spapi.SnapshotSummary("os-snap-b")],
         attachments=[
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-a", client=42, snapshot=False, rights="rw"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
             ),
         ],
@@ -329,8 +355,11 @@ def test_sync(tempf, att):
             ],
             [],
         ),
-        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("ignore"),],
-        snapshots=[spapi.Snapshot("os-snap-b")],
+        volumes=[
+            spapi.VolumeSummary("os-vol-a"),
+            spapi.VolumeSummary("ignore"),
+        ],
+        snapshots=[spapi.SnapshotSummary("os-snap-b")],
     )
 
     assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
@@ -344,22 +373,25 @@ def test_sync(tempf, att):
                 mock.call(client=42, volume="os-snap-extra", volsnap=True),
             ],
         ),
-        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("os-vol-extra")],
+        volumes=[
+            spapi.VolumeSummary("os-vol-a"),
+            spapi.VolumeSummary("os-vol-extra"),
+        ],
         snapshots=[
-            spapi.Snapshot("os-snap-b"),
-            spapi.Snapshot("os-snap-extra"),
+            spapi.SnapshotSummary("os-snap-b"),
+            spapi.SnapshotSummary("os-snap-extra"),
         ],
         attachments=[
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-extra", client=42, snapshot=False, rights="rw",
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-extra", client=42, snapshot=True, rights="ro"
             ),
         ],
@@ -376,31 +408,31 @@ def test_sync(tempf, att):
             ],
         ),
         volumes=[
-            spapi.Volume("os-vol-a"),
-            spapi.Volume("os-vol-detached"),
-            spapi.Volume("os-vol-extra"),
+            spapi.VolumeSummary("os-vol-a"),
+            spapi.VolumeSummary("os-vol-detached"),
+            spapi.VolumeSummary("os-vol-extra"),
         ],
         snapshots=[
-            spapi.Snapshot("os-snap-b"),
-            spapi.Snapshot("os-snap-extra"),
+            spapi.SnapshotSummary("os-snap-b"),
+            spapi.SnapshotSummary("os-snap-extra"),
         ],
         attachments=[
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-detached",
                 client=42,
                 snapshot=False,
                 rights="rw",
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-extra", client=42, snapshot=False, rights="rw",
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-extra", client=42, snapshot=True, rights="ro"
             ),
         ],
@@ -416,29 +448,32 @@ def test_sync(tempf, att):
                 mock.call(client=42, volume="os-snap-extra", volsnap=True),
             ],
         ),
-        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("os-vol-extra"),],
+        volumes=[
+            spapi.VolumeSummary("os-vol-a"),
+            spapi.VolumeSummary("os-vol-extra"),
+        ],
         snapshots=[
-            spapi.Snapshot("os-snap-b"),
-            spapi.Snapshot("os-snap-detached"),
-            spapi.Snapshot("os-snap-extra"),
+            spapi.SnapshotSummary("os-snap-b"),
+            spapi.SnapshotSummary("os-snap-detached"),
+            spapi.SnapshotSummary("os-snap-extra"),
         ],
         attachments=[
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-vol-extra", client=42, snapshot=False, rights="rw",
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-detached",
                 client=42,
                 snapshot=True,
                 rights="ro",
             ),
-            spapi.Attachment(
+            spapi.AttachmentDesc(
                 volume="os-snap-extra", client=42, snapshot=True, rights="ro"
             ),
         ],

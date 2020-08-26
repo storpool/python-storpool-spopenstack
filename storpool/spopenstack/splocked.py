@@ -1,6 +1,6 @@
 #
 # -
-# Copyright (c) 2014, 2015, 2019  StorPool.
+# Copyright (c) 2014, 2015, 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +23,18 @@ A trivial JSON key/value store protected by a lockfile.
 import errno
 import json
 import os
+import posix
 import threading
 import time
+
+try:
+    import types
+
+    from typing import Any, Dict, Iterable, Optional, Text, Type, TypeVar
+
+    TExc = TypeVar("TExc", bound=BaseException)
+except ImportError:
+    pass
 
 
 rlock = threading.RLock()
@@ -32,24 +42,29 @@ rlock = threading.RLock()
 
 class SPLockedFile(object):
     def __init__(self, fname):
+        # type: (SPLockedFile, str) -> None
         self._fname = fname
         self._lockfname = self._fname + ".splock"
-        self._lockfd = None
-        self._last = None
+        self._lockfd = None  # type: Optional[int]
+        self._last = None  # type: Optional[posix.stat_result]
         self._count = 0
 
     def changed(self):
+        # type: (SPLockedFile) -> bool
         last = self._last
         try:
             st = os.stat(self._fname)
         except OSError:
             if last is not None:
-                last = None
+                self._last = None
                 return True
             else:
                 return False
         if last is None:
             return True
+
+        assert isinstance(st, posix.stat_result)
+        assert isinstance(last, posix.stat_result)
         return (
             st.st_ino != last.st_ino
             or st.st_mtime != last.st_mtime
@@ -57,6 +72,7 @@ class SPLockedFile(object):
         )
 
     def __enter__(self):
+        # type: (SPLockedFile) -> None
         rlock.acquire()
         self._count += 1
 
@@ -80,14 +96,21 @@ class SPLockedFile(object):
                     f=self._fname, fl=self._lockfname
                 )
             )
+        assert f is not None
         self._lockfd = f
 
-    def __exit__(self, etype, eval, tb):
+    def __exit__(
+        self,  # type: SPLockedFile
+        etype,  # type: Optional[Type[TExc]]
+        eval,  # type: Optional[TExc]
+        tb,  # type: Optional[types.TracebackType]
+    ):  # type: (...) -> None
         if self._count > 1:
             self._count -= 1
             rlock.release()
             return
 
+        assert self._lockfd is not None
         os.close(self._lockfd)
         self._lockfd = None
 
@@ -107,11 +130,13 @@ class SPLockedFile(object):
         rlock.release()
 
     def jsload(self):
+        # type: (SPLockedFile) -> Any
         with self:
             with open(self._fname, "r") as f:
                 return json.loads(f.read())
 
     def jsdump(self, obj):
+        # type: (SPLockedFile, Any) -> None
         with self:
             with open(self._fname, "w") as f:
                 f.write(json.dumps(obj))
@@ -119,10 +144,12 @@ class SPLockedFile(object):
 
 class SPLockedJSONDB(SPLockedFile):
     def __init__(self, fname):
+        # type: (SPLockedJSONDB, str) -> None
         super(SPLockedJSONDB, self).__init__(fname)
-        self._data = None
+        self._data = None  # type: Optional[Dict[Text, Any]]
 
     def get(self):
+        # type: (SPLockedJSONDB) -> Dict[Text, Any]
         with self:
             if self._data is None or self.changed():
                 try:
@@ -133,18 +160,23 @@ class SPLockedJSONDB(SPLockedFile):
                         self._data = {}
                     else:
                         raise
+
+            assert self._data is not None
             return self._data
 
     def add(self, key, val):
+        # type: (SPLockedJSONDB, Text, Any) -> None
         with self:
             d = self.get()
             d[key] = val
             self.jsdump(d)
 
     def remove(self, key):
+        # type: (SPLockedJSONDB, Text) -> None
         self.remove_keys([key])
 
     def remove_keys(self, keys):
+        # type: (SPLockedJSONDB, Iterable[Text]) -> None
         with self:
             d = self.get()
             changed = False

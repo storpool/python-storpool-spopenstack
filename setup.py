@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-import setuptools
+import setuptools  # type: ignore
 
 
 setuptools.setup(

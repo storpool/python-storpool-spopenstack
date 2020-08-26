@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019  StorPool.
+# Copyright (c) 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,20 @@
 #
 """ Mock the storpool.spapi.* classes for testing """
 
+try:
+    from typing import Any, Dict, List, Optional, Union
+
+    AttachmentDescDict = Dict[str, Union[str, bool, List[Union[str, int]]]]
+except ImportError:
+    pass
+
 
 # pylint: disable=too-few-public-methods
 class ApiError(Exception):
     """ Mock the class for errors returned by API requests. """
 
     def __init__(self, status, json=None):
+        # type: (ApiError, Any, Optional[Dict[str, Dict[str, Any]]]) -> None
         super(ApiError, self).__init__()
         self.status = status
         self.json = (
@@ -41,27 +49,31 @@ class ApiError(Exception):
         self.transient = err.get("transient", False)
 
     def __str__(self):
+        # type: (ApiError) -> str
         return "{0}: {1}".format(self.name, self.desc)
 
 
-class Volume(object):
+class VolumeSummary(object):
     """ Mock an API volume. """
 
     def __init__(self, name):
+        # type: (VolumeSummary) -> None
         self.name = name
 
 
-class Snapshot(object):
+class SnapshotSummary(object):
     """ Mock an API snapshot. """
 
     def __init__(self, name):
+        # type: (SnapshotSummary) -> None
         self.name = name
 
 
-class Attachment(object):
+class AttachmentDesc(object):
     """ Mock an API record about an attached volume or snapshot. """
 
     def __init__(self, volume, client, snapshot, rights):
+        # type: (AttachmentDesc, str, int, str, str) -> None
         self.volume = volume
         self.client = client
         self.snapshot = snapshot
@@ -72,20 +84,22 @@ class Api(object):
     """ Mock the API bindings class. """
 
     def __init__(self, host, port, auth):
+        # type: (Api, str, int, str) -> None
         """ Initialize an API bindings object. """
         self.host = host
         self.port = port
         self.auth = auth
-        self.reassign = []
+        self.reassign = []  # type: List[List[AttachmentDescDict]]
 
-        self.volumes = []
-        self.snapshots = []
-        self.attachments = []
+        self.volumes = []  # type: List[VolumeSummary]
+        self.snapshots = []  # type: List[SnapshotSummary]
+        self.attachments = []  # type: List[AttachmentDesc]
 
     @classmethod
     def fromConfig(cls, cfg, **kwargs):  # pylint: disable=invalid-name
+        # type: (Dict[str, str], Dict[str, Any]) -> Api
         """ Initialize an API bindings object with the supplied config. """
-        return cls(
+        return cls(  # type: ignore
             host=cfg["SP_API_HTTP_HOST"],
             port=int(cfg["SP_API_HTTP_PORT"]),
             auth=cfg["SP_AUTH_TOKEN"],
@@ -93,17 +107,21 @@ class Api(object):
         )
 
     def volumesReassign(self, json):  # pylint: disable=invalid-name
+        # type: (Api, List[AttachmentDescDict]) -> None
         """ Record the arguments passed to a volumesReassign() call. """
         self.reassign.append(json)
 
     def attachmentsList(self):  # pylint: disable=invalid-name
+        # type: (Api) -> List[AttachmentDesc]
         """ Return the list of attachments specified by the test. """
         return list(self.attachments)
 
     def volumesList(self):  # pylint: disable=invalid-name
+        # type: (Api) -> List[VolumeSummary]
         """ Return the list of volumes specified by the test. """
         return list(self.volumes)
 
     def snapshotsList(self):  # pylint: disable=invalid-name
+        # type: (Api) -> List[SnapshotSummary]
         """ Return the list of snapshots specified by the test. """
         return list(self.snapshots)

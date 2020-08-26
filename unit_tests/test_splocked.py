@@ -19,6 +19,11 @@
 import json
 import sys
 
+try:
+    from typing import Text
+except ImportError:
+    pass
+
 from . import utils
 from .mock_storpool import spapi, spconfig
 
@@ -36,6 +41,7 @@ from storpool.spopenstack import splocked  # noqa: E402
 
 @utils.with_tempdir
 def test_lockfile(tempd):
+    # type: (utils.pathlib.Path) -> None
     """ Test that an SPLockedFile object behaves sensibly. """
     tempf = tempd / "testfile.json"
     lockf = tempd / (tempf.name + ".splock")
@@ -46,6 +52,7 @@ def test_lockfile(tempd):
     fname = str(tempf.absolute())
 
     def mock_json_loads(loaded):
+        # type: (str) -> int
         """ Mock json.loads() on the temporary file. """
         assert tempf.is_file()
         assert tempf.stat().st_size != 0
@@ -54,6 +61,7 @@ def test_lockfile(tempd):
         return 616
 
     def mock_json_dumps(dumped):
+        # type: (int) -> Text
         """ Mock json.dumps() on the temporary file. """
         assert tempf.is_file()
         assert tempf.stat().st_size == 0
@@ -89,11 +97,13 @@ def test_lockfile(tempd):
 
 @utils.with_tempdir
 def test_jsondb(tempd):
+    # type: (utils.pathlib.Path) -> None
     """ Test the SPLockedJSONDB class methods. """
     tempf = tempd / "db.json"
     lockf = tempd / (tempf.name + ".splock")
 
     def assert_none():
+        # type: () -> None
         """ Make sure none of the files exist. """
         assert not tempf.exists()
         assert not lockf.exists()
@@ -105,6 +115,7 @@ def test_jsondb(tempd):
     assert_none()
 
     def assert_db():
+        # type: () -> None
         """ Make sure the database file exists and is not empty. """
         assert tempf.is_file()
         assert tempf.stat().st_size != 0

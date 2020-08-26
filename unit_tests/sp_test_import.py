@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019  StorPool.
+# Copyright (c) 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 #
 """ Utility functions for storpool.spopenstack unit tests. """
 
+import types  # pylint: disable=unused-import
 import sys
 
 if sys.version_info[0] >= 3:
@@ -23,10 +24,18 @@ if sys.version_info[0] >= 3:
 else:
     import imp
 
+try:
+    from typing import Any, List, Optional, Tuple
+except ImportError:
+    pass
+
 from . import utils  # noqa: E402 pylint: disable=wrong-import-position
 
 
-def _find_mock_file(module, path):
+def _find_mock_file(
+    module,  # type: str
+    path,  # type: Optional[List[str]]
+):  # type: (...) -> Optional[Tuple[str, utils.pathlib.Path]]
     """ Locate the unit_tests.mock_storpool modules. """
     if module in ("storpool.spapi", "storpool.spconfig"):
         if not path:
@@ -50,35 +59,50 @@ class SPTestModuleFinder(object):
     """ Mimic the storpool namespace layout for the unit tests. """
 
     def __init__(self, name, mock_file):
+        # type: (SPTestModuleFinder, str, utils.pathlib.Path) -> None
         """ Initialize a loader. """
         self.name = name
         self.mock_file = mock_file
 
-    def load_module(self, name):
-        """ Load the located stub modules. """
-        mock_path = self.mock_file.parent
-        module_info = imp.find_module(self.name, [str(mock_path)])
-        module = imp.load_module(name, *module_info)
-        return module
+    if sys.version_info[0] >= 3:
 
-    @classmethod
-    def find_module(cls, module, path=None):
-        """ Locate a (possibly mock) module to load for Python 2. """
-        data = _find_mock_file(module, path)
-        if data is None:
-            return None
+        @classmethod
+        def find_spec(
+            cls,
+            module,  # type: str
+            path=None,  # type: Optional[List[str]]
+            _target=None,  # type: Any
+        ):  # type: (...) -> Optional[machinery.ModuleSpec]
+            """ Locate a (possibly mock) module to load for Python 3. """
+            data = _find_mock_file(module, path)
+            if data is None:
+                return None
 
-        name, mock_file = data
-        return cls(name, mock_file)
+            _, mock_file = data
+            return machinery.ModuleSpec(
+                module, machinery.SourceFileLoader(module, str(mock_file))
+            )
 
-    @classmethod
-    def find_spec(cls, module, path=None, _target=None):
-        """ Locate a (possibly mock) module to load for Python 2. """
-        data = _find_mock_file(module, path)
-        if data is None:
-            return None
+    else:
 
-        _, mock_file = data
-        return machinery.ModuleSpec(
-            module, machinery.SourceFileLoader(module, str(mock_file))
-        )
+        def load_module(self, name):
+            # type: (SPTestModuleFinder, str) -> types.ModuleType
+            """ Load the located stub modules. """
+            mock_path = self.mock_file.parent
+            module_info = imp.find_module(self.name, [str(mock_path)])
+            module = imp.load_module(name, *module_info)  # type: ignore
+            return module
+
+        @classmethod
+        def find_module(
+            cls,
+            module,  # type: str
+            path=None,  # type: Optional[List[str]]
+        ):  # type: (...) -> Optional[SPTestModuleFinder]
+            """ Locate a (possibly mock) module to load for Python 2. """
+            data = _find_mock_file(module, path)
+            if data is None:
+                return None
+
+            name, mock_file = data
+            return cls(name, mock_file)

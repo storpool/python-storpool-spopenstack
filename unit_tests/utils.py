@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019  StorPool.
+# Copyright (c) 2019, 2020  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,14 +24,21 @@ import tempfile
 try:
     import pathlib2 as pathlib
 except ImportError:
-    import pathlib
+    import pathlib  # type: ignore
+
+try:
+    from typing import Callable
+except ImportError:
+    pass
 
 
 # Ah great, Python 2.x's tempfile does not have TemporaryDirectory
 def with_tempdir(func):
+    # type: (Callable[[pathlib.Path], None]) -> Callable[[], None]
     """ Decorate a function, create a temporary directory. """
 
     def wrapper():
+        # type: () -> None
         """ Create a temporary directory, invoke the target function. """
         tempd = pathlib.Path(tempfile.mkdtemp())
         try:

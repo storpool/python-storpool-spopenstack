@@ -24,6 +24,25 @@ import collections
 import os
 import time
 
+try:
+    import logging
+
+    from typing import Dict, List, Optional, Text, Tuple, TypedDict
+
+    Attach = TypedDict(
+        "Attach",
+        {
+            "volume": str,
+            "type": str,
+            "id": str,
+            "rights": int,
+            "volsnap": bool,
+            "remove_on_detach": bool,
+        },
+    )
+except ImportError:
+    pass
+
 from storpool import spconfig, spapi
 
 from . import splocked
@@ -34,39 +53,46 @@ LOCKFILE = "/var/spool/openstack-storpool/openstack-attach.json"
 
 class AttachDB(splocked.SPLockedJSONDB):
     def __init__(self, log, fname=LOCKFILE):
+        # type: (AttachDB, logging.Logger, str) -> None
         super(AttachDB, self).__init__(fname)
-        self._api = None
-        self._config = None
-        self._ourId = None
-        self._volume_prefix = None
+        self._api = None  # type: Optional[spapi.Api]
+        self._config = None  # type: Optional[spconfig.SPConfig]
+        self._ourId = None  # type: Optional[int]
+        self._volume_prefix = None  # type: Optional[str]
         self.LOG = log
 
     def config(self):
+        # type: (AttachDB) -> spconfig.SPConfig
         if self._config is None:
             self._config = spconfig.SPConfig()
             self._ourId = int(self._config["SP_OURID"])
         return self._config
 
     def api(self):
+        # type: (AttachDB) -> spapi.Api
         if self._api is None:
             self._api = spapi.Api.fromConfig(self.config())
         return self._api
 
     def volumePrefix(self):
+        # type: (AttachDB) -> str
         if self._volume_prefix is None:
             cfg = self.config()
             self._volume_prefix = cfg.get("SP_OPENSTACK_VOLUME_PREFIX", "os")
         return self._volume_prefix
 
     def volumeName(self, id):
+        # type: (AttachDB, str) -> str
         return "{pfx}--volume-{id}".format(pfx=self.volumePrefix(), id=id)
 
     def volsnapName(self, id, req_id):
+        # type: (AttachDB, str, str) -> str
         return "{pfx}--volsnap-{id}--req-{req_id}".format(
             pfx=self.volumePrefix(), id=id, req_id=req_id
         )
 
     def snapshotName(self, type, id, more=None):
+        # type: (AttachDB, str, str, Optional[str]) -> str
         return "{pfx}--{t}--{m}--snapshot-{id}".format(
             pfx=self.volumePrefix(),
             t=type,
@@ -75,7 +101,9 @@ class AttachDB(splocked.SPLockedJSONDB):
         )
 
     # TODO: cache at least the API attachments data
-    def _get_attachments_data(self):
+    def _get_attachments_data(
+        self,  # type: AttachDB
+    ):  # type: (...) -> Tuple[Dict[Text, Attach], List[spapi.AttachmentDesc]]
         pfx = self.volumePrefix()
         attached = [
             att
@@ -85,10 +113,13 @@ class AttachDB(splocked.SPLockedJSONDB):
         return (self.get(), attached)
 
     def sync(self, req_id, detached):
-        with self:
-            (attach_req, apiatt) = self._get_attachments_data()
+        # type: (AttachDB, str, Optional[str]) -> None
+        assert self._ourId is not None
 
-            attach = attach_req.get(req_id, None)
+        with self:
+            (attach_req_d, apiatt) = self._get_attachments_data()
+
+            attach = attach_req_d.get(req_id, None)
             if attach is None:
                 if detached is not None:
                     # Ach, let's just hope for the best...
@@ -103,23 +134,23 @@ class AttachDB(splocked.SPLockedJSONDB):
                 )
 
             # OK, let's first see what *should be* attached
-            vols = {}
+            vols = {}  # type: Dict[str, Attach]
             if detached is None:
-                attach_req = attach_req.values()
+                attach_req = list(attach_req_d.values())
             else:
                 # Detaching this particular volume in this request?
                 attach_req = [
                     att
-                    for att in attach_req.values()
+                    for att in attach_req_d.values()
                     if att["volume"] != detached or att["id"] != req_id
                 ]
             vol_to_reqs = collections.defaultdict(list)
             for att in attach_req:
-                v = att["volume"]
-                vol_to_reqs[v].append(att["id"])
-                if v not in vols or vols[v]["rights"] < att["rights"]:
-                    vols[v] = {
-                        "volume": v,
+                vname = att["volume"]
+                vol_to_reqs[vname].append(att["id"])
+                if vname not in vols or vols[vname]["rights"] < att["rights"]:
+                    vols[vname] = {
+                        "volume": vname,
                         "type": "n/a",
                         "id": "n/a",
                         "rights": att["rights"],
@@ -139,7 +170,7 @@ class AttachDB(splocked.SPLockedJSONDB):
                     "remove_on_detach": False,
                 }
                 for att in apiatt
-            }
+            }  # type: Dict[str, Attach]
 
             # Right, do we need to do anything now?
             all_vols = {v.name: True for v in self.api().volumesList()}
@@ -177,6 +208,7 @@ class AttachDB(splocked.SPLockedJSONDB):
                     )
 
     def _attach_and_wait(self, client, volume, volsnap, rights):
+        # type: (AttachDB, int, str, bool, int) -> None
         if volsnap:
             if rights > 1:
                 raise spapi.ApiError(
@@ -197,6 +229,7 @@ class AttachDB(splocked.SPLockedJSONDB):
             time.sleep(1)
 
     def _detach_and_wait(self, client, volume, volsnap):
+        # type: (AttachDB, int, str, bool) -> None
         count = 10
         while True:
             try:

@@ -199,21 +199,13 @@ class AttachDB(splocked.SPLockedJSONDB):
                 if reqs_to_remove:
                     self.remove_keys(reqs_to_remove)
 
-            for v in attached.values():
-                n = v["volume"]
-                if n in vols:
-                    volsnap = vols[n]["volsnap"]
-                    if vols[n]["rights"] < v["rights"]:
-                        self._attach_and_wait(
-                            client=self._ourId,
-                            volume=n,
-                            volsnap=volsnap,
-                            rights=vols[n]["rights"],
-                        )
-                else:
-                    self._detach_and_wait(
-                        client=self._ourId, volume=n, volsnap=v["volsnap"]
-                    )
+            # Finally, are we trying to detach anything?
+            if detached in attached:
+                self._detach_and_wait(
+                    client=self._ourId,
+                    volume=detached,
+                    volsnap=attached[detached]["volsnap"],
+                )
 
     def _attach_and_wait(self, client, volume, volsnap, rights):
         # type: (AttachDB, int, str, bool, int) -> None

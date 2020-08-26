@@ -362,10 +362,7 @@ def test_sync(tempf, att):
         ("a", None),
         (
             [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
-            [
-                mock.call(client=42, volume="os-vol-extra", volsnap=False),
-                mock.call(client=42, volume="os-snap-extra", volsnap=True),
-            ],
+            [],
         ),
         volumes=[
             spapi.VolumeSummary("os-vol-a"),
@@ -395,11 +392,7 @@ def test_sync(tempf, att):
         ("a", "os-vol-detached"),
         (
             [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
-            [
-                mock.call(client=42, volume="os-vol-detached", volsnap=False),
-                mock.call(client=42, volume="os-vol-extra", volsnap=False),
-                mock.call(client=42, volume="os-snap-extra", volsnap=True),
-            ],
+            [mock.call(client=42, volume="os-vol-detached", volsnap=False)],
         ),
         volumes=[
             spapi.VolumeSummary("os-vol-a"),
@@ -436,11 +429,7 @@ def test_sync(tempf, att):
         ("a", "os-snap-detached"),
         (
             [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
-            [
-                mock.call(client=42, volume="os-vol-extra", volsnap=False),
-                mock.call(client=42, volume="os-snap-detached", volsnap=True),
-                mock.call(client=42, volume="os-snap-extra", volsnap=True),
-            ],
+            [mock.call(client=42, volume="os-snap-detached", volsnap=True)],
         ),
         volumes=[
             spapi.VolumeSummary("os-vol-a"),

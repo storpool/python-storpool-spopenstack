@@ -31,9 +31,7 @@ from . import splocked
 
 class AttachDB(splocked.SPLockedJSONDB):
     def __init__(
-        self,
-        fname="/var/spool/openstack-storpool/openstack-attach.json",
-        log=None,
+        self, log, fname="/var/spool/openstack-storpool/openstack-attach.json",
     ):
         super(AttachDB, self).__init__(fname)
         self._api = None

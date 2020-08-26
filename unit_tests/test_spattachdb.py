@@ -192,6 +192,37 @@ def test_detach_and_wait(_tempf, att):
         assert state["count"] == 11
 
 
+def compare_attach(item):
+    """Tweak the arguments of a SPAttachDB._attach_and_wait() call."""
+    if len(item) == 2:
+        args, kwargs = item
+    else:
+        args, kwargs = item[1], item[2]
+    assert (args, item) == ((), item)
+
+    return (
+        kwargs["client"],
+        kwargs["volume"],
+        kwargs["volsnap"],
+        kwargs["rights"],
+    )
+
+
+def compare_detach(item):
+    """Tweak the arguments of a SPAttachDB._detach_and_wait() call."""
+    if len(item) == 2:
+        args, kwargs = item
+    else:
+        args, kwargs = item[1], item[2]
+    assert (args, item) == ((), item)
+
+    return (
+        kwargs["client"],
+        kwargs["volume"],
+        kwargs["volsnap"],
+    )
+
+
 @with_attachdb
 def test_sync(tempf, att):
     """ Test the main purpose of AttachDB: the sync() method. """
@@ -213,77 +244,114 @@ def test_sync(tempf, att):
     att.sync("no", "no")
     assert tempf.read_text(encoding="UTF-8") == contents
 
-    with mock.patch.object(att, "_attach_and_wait") as att_wait:
-        with mock.patch.object(att, "_detach_and_wait") as det_wait:
-            att.api().volumes = [spapi.Volume("os-vol-a")]
-            att.sync("a", None)
-            assert att_wait.call_count == 1
-            assert det_wait.call_count == 0
+    def run_sync(  # pylint: disable=too-many-arguments
+        args,
+        expected,
+        volumes=None,
+        snapshots=None,
+        attachments=None,
+        expected_json=None,
+    ):
+        """Run att.sync() in the specified environment."""
 
-    assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == {
-        "a": {"id": "a", "volume": "os-vol-a", "volsnap": False, "rights": 2},
-        "b": {"id": "b", "volume": "os-snap-b", "volsnap": True, "rights": 1},
-    }
-    tempf.write_text(contents, encoding="UTF-8")
+        with mock.patch.object(att, "_attach_and_wait") as att_wait:
+            with mock.patch.object(att, "_detach_and_wait") as det_wait:
+                att.api().volumes = volumes if volumes else []
+                att.api().snapshots = snapshots if snapshots else []
+                att.api().attachments = attachments if attachments else []
+                att.sync(args[0], args[1])
+                assert sorted(
+                    att_wait.call_args_list, key=compare_attach
+                ) == sorted(expected[0], key=compare_attach)
+                assert sorted(
+                    det_wait.call_args_list, key=compare_detach
+                ) == sorted(expected[1], key=compare_detach)
+
+        if expected_json is None:
+            assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
+        else:
+            assert (
+                jsonmod.loads(tempf.read_text(encoding="UTF-8"))
+                == expected_json
+            )
+
+            tempf.write_text(contents, encoding="UTF-8")
+            assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
+
+    run_sync(
+        ("a", None),
+        (
+            [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
+            [],
+        ),
+        volumes=[spapi.Volume("os-vol-a")],
+        expected_json={
+            "a": {
+                "id": "a",
+                "volume": "os-vol-a",
+                "volsnap": False,
+                "rights": 2,
+            },
+            "b": {
+                "id": "b",
+                "volume": "os-snap-b",
+                "volsnap": True,
+                "rights": 1,
+            },
+        },
+    )
+
+    run_sync(
+        ("a", None),
+        ([], []),
+        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("ignore"),],
+        snapshots=[spapi.Snapshot("os-snap-b")],
+        attachments=[
+            spapi.Attachment(
+                volume="os-vol-a", client=42, snapshot=False, rights="rw"
+            ),
+            spapi.Attachment(
+                volume="os-snap-b", client=42, snapshot=True, rights="ro"
+            ),
+        ],
+    )
+
+    run_sync(
+        ("a", None),
+        (
+            [
+                mock.call(
+                    client=42, volume="os-vol-a", volsnap=False, rights=2
+                ),
+                mock.call(
+                    client=42, volume="os-snap-b", volsnap=True, rights=1
+                ),
+            ],
+            [],
+        ),
+        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("ignore"),],
+        snapshots=[spapi.Snapshot("os-snap-b")],
+    )
+
     assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
 
-    with mock.patch.object(att, "_attach_and_wait") as att_wait:
-        with mock.patch.object(att, "_detach_and_wait") as det_wait:
-            att.api().volumes = [
-                spapi.Volume("os-vol-a"),
-                spapi.Volume("ignore"),
-            ]
-            att.api().snapshots = [spapi.Snapshot("os-snap-b")]
-            att.sync("a", None)
-            assert att_wait.call_count == 2
-            assert det_wait.call_count == 0
-
-    assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
-
-    with mock.patch.object(att, "_attach_and_wait") as att_wait:
-        with mock.patch.object(att, "_detach_and_wait") as det_wait:
-            att.api().volumes = [
-                spapi.Volume("os-vol-a"),
-                spapi.Volume("ignore"),
-            ]
-            att.api().snapshots = [spapi.Snapshot("os-snap-b")]
-            att.api().attachments = [
-                spapi.Attachment(
-                    volume="os-vol-a", client=42, snapshot=False, rights="rw"
-                ),
-                spapi.Attachment(
-                    volume="os-snap-b", client=42, snapshot=True, rights="ro"
-                ),
-            ]
-            att.sync("a", None)
-            assert att_wait.call_count == 0
-            assert det_wait.call_count == 0
-
-    assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
-
-    with mock.patch.object(att, "_attach_and_wait") as att_wait:
-        with mock.patch.object(att, "_detach_and_wait") as det_wait:
-            att.api().volumes = [
-                spapi.Volume("os-vol-a"),
-                spapi.Volume("os-vol-detach"),
-            ]
-            att.api().snapshots = [spapi.Snapshot("os-snap-b")]
-            att.api().attachments = [
-                spapi.Attachment(
-                    volume="os-vol-a", client=41, snapshot=False, rights="rw"
-                ),
-                spapi.Attachment(
-                    volume="os-vol-detach",
-                    client=42,
-                    snapshot=False,
-                    rights="rw",
-                ),
-                spapi.Attachment(
-                    volume="os-snap-b", client=42, snapshot=True, rights="ro"
-                ),
-            ]
-            att.sync("a", None)
-            assert att_wait.call_count == 1
-            assert det_wait.call_count == 1
-
-    assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata
+    run_sync(
+        ("a", None),
+        (
+            [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
+            [mock.call(client=42, volume="os-vol-detach", volsnap=False)],
+        ),
+        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("os-vol-detach")],
+        snapshots=[spapi.Snapshot("os-snap-b")],
+        attachments=[
+            spapi.Attachment(
+                volume="os-vol-a", client=41, snapshot=False, rights="rw"
+            ),
+            spapi.Attachment(
+                volume="os-vol-detach", client=42, snapshot=False, rights="rw",
+            ),
+            spapi.Attachment(
+                volume="os-snap-b", client=42, snapshot=True, rights="ro"
+            ),
+        ],
+    )

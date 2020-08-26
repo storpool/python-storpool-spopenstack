@@ -21,7 +21,7 @@ import setuptools
 
 setuptools.setup(
     name="storpool.spopenstack",
-    version="3.0.0",
+    version="3.0.1",
     packages=("storpool", "storpool.spopenstack"),
     namespace_packages=("storpool",),
     install_requires=("storpool>=4.0.0",),

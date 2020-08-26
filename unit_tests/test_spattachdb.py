@@ -339,10 +339,16 @@ def test_sync(tempf, att):
         ("a", None),
         (
             [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
-            [mock.call(client=42, volume="os-vol-extra", volsnap=False)],
+            [
+                mock.call(client=42, volume="os-vol-extra", volsnap=False),
+                mock.call(client=42, volume="os-snap-extra", volsnap=True),
+            ],
         ),
         volumes=[spapi.Volume("os-vol-a"), spapi.Volume("os-vol-extra")],
-        snapshots=[spapi.Snapshot("os-snap-b")],
+        snapshots=[
+            spapi.Snapshot("os-snap-b"),
+            spapi.Snapshot("os-snap-extra"),
+        ],
         attachments=[
             spapi.Attachment(
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
@@ -352,6 +358,9 @@ def test_sync(tempf, att):
             ),
             spapi.Attachment(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
+            ),
+            spapi.Attachment(
+                volume="os-snap-extra", client=42, snapshot=True, rights="ro"
             ),
         ],
     )

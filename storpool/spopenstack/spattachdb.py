@@ -29,10 +29,11 @@ from storpool import spconfig, spapi
 from . import splocked
 
 
+LOCKFILE = "/var/spool/openstack-storpool/openstack-attach.json"
+
+
 class AttachDB(splocked.SPLockedJSONDB):
-    def __init__(
-        self, log, fname="/var/spool/openstack-storpool/openstack-attach.json",
-    ):
+    def __init__(self, log, fname=LOCKFILE):
         super(AttachDB, self).__init__(fname)
         self._api = None
         self._config = None

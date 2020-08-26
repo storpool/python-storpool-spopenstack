@@ -78,10 +78,11 @@ class AttachDB(splocked.SPLockedJSONDB):
     # TODO: cache at least the API attachments data
     def _get_attachments_data(self):
         pfx = self.volumePrefix()
-        attached = filter(
-            lambda att: att.volume.startswith(pfx),
-            self.api().attachmentsList(),
-        )
+        attached = [
+            att
+            for att in self.api().attachmentsList()
+            if att.volume.startswith(pfx)
+        ]
         return (self.get(), attached)
 
     def sync(self, req_id, detached):
@@ -125,19 +126,17 @@ class AttachDB(splocked.SPLockedJSONDB):
                     }
 
             # OK, let's see what *is* attached
-            apiatt = filter(lambda att: att.client == self._ourId, apiatt)
+            apiatt = [att for att in apiatt if att.client == self._ourId]
             attached = dict(
-                map(
-                    lambda att: (
-                        att.volume,
-                        {
-                            "volume": att.volume,
-                            "rights": 2 if att.rights == "rw" else 1,
-                            "snapshot": att.snapshot,
-                        },
-                    ),
-                    apiatt,
+                (
+                    att.volume,
+                    {
+                        "volume": att.volume,
+                        "rights": 2 if att.rights == "rw" else 1,
+                        "snapshot": att.snapshot,
+                    },
                 )
+                for att in apiatt
             )
 
             # Right, do we need to do anything now?

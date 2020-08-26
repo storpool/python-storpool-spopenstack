@@ -364,3 +364,82 @@ def test_sync(tempf, att):
             ),
         ],
     )
+
+    run_sync(
+        ("a", "os-vol-detached"),
+        (
+            [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
+            [
+                mock.call(client=42, volume="os-vol-detached", volsnap=False),
+                mock.call(client=42, volume="os-vol-extra", volsnap=False),
+                mock.call(client=42, volume="os-snap-extra", volsnap=True),
+            ],
+        ),
+        volumes=[
+            spapi.Volume("os-vol-a"),
+            spapi.Volume("os-vol-detached"),
+            spapi.Volume("os-vol-extra"),
+        ],
+        snapshots=[
+            spapi.Snapshot("os-snap-b"),
+            spapi.Snapshot("os-snap-extra"),
+        ],
+        attachments=[
+            spapi.Attachment(
+                volume="os-vol-a", client=41, snapshot=False, rights="rw"
+            ),
+            spapi.Attachment(
+                volume="os-vol-detached",
+                client=42,
+                snapshot=False,
+                rights="rw",
+            ),
+            spapi.Attachment(
+                volume="os-vol-extra", client=42, snapshot=False, rights="rw",
+            ),
+            spapi.Attachment(
+                volume="os-snap-b", client=42, snapshot=True, rights="ro"
+            ),
+            spapi.Attachment(
+                volume="os-snap-extra", client=42, snapshot=True, rights="ro"
+            ),
+        ],
+    )
+
+    run_sync(
+        ("a", "os-snap-detached"),
+        (
+            [mock.call(client=42, volume="os-vol-a", volsnap=False, rights=2)],
+            [
+                mock.call(client=42, volume="os-vol-extra", volsnap=False),
+                mock.call(client=42, volume="os-snap-detached", volsnap=True),
+                mock.call(client=42, volume="os-snap-extra", volsnap=True),
+            ],
+        ),
+        volumes=[spapi.Volume("os-vol-a"), spapi.Volume("os-vol-extra"),],
+        snapshots=[
+            spapi.Snapshot("os-snap-b"),
+            spapi.Snapshot("os-snap-detached"),
+            spapi.Snapshot("os-snap-extra"),
+        ],
+        attachments=[
+            spapi.Attachment(
+                volume="os-vol-a", client=41, snapshot=False, rights="rw"
+            ),
+            spapi.Attachment(
+                volume="os-vol-extra", client=42, snapshot=False, rights="rw",
+            ),
+            spapi.Attachment(
+                volume="os-snap-b", client=42, snapshot=True, rights="ro"
+            ),
+            spapi.Attachment(
+                volume="os-snap-detached",
+                client=42,
+                snapshot=True,
+                rights="ro",
+            ),
+            spapi.Attachment(
+                volume="os-snap-extra", client=42, snapshot=True, rights="ro"
+            ),
+        ],
+    )

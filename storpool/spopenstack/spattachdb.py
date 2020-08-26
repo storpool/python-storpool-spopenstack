@@ -127,17 +127,14 @@ class AttachDB(splocked.SPLockedJSONDB):
 
             # OK, let's see what *is* attached
             apiatt = [att for att in apiatt if att.client == self._ourId]
-            attached = dict(
-                (
-                    att.volume,
-                    {
-                        "volume": att.volume,
-                        "rights": 2 if att.rights == "rw" else 1,
-                        "snapshot": att.snapshot,
-                    },
-                )
+            attached = {
+                att.volume: {
+                    "volume": att.volume,
+                    "rights": 2 if att.rights == "rw" else 1,
+                    "snapshot": att.snapshot,
+                }
                 for att in apiatt
-            )
+            }
 
             # Right, do we need to do anything now?
             all_vols = {v.name: True for v in self.api().volumesList()}

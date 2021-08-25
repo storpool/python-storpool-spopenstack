@@ -65,7 +65,10 @@ class AttachDB(splocked.SPLockedJSONDB):
         # type: (AttachDB) -> spconfig.SPConfig
         if self._config is None:
             self._config = spconfig.SPConfig()
-            self._ourId = int(self._config["SP_OURID"])
+            try:
+                self._ourId = int(self._config["SP_OURID"])
+            except KeyError:
+                self._ourId = -1
         return self._config
 
     def api(self):
@@ -114,7 +117,7 @@ class AttachDB(splocked.SPLockedJSONDB):
 
     def sync(self, req_id, detached):
         # type: (AttachDB, str, Optional[str]) -> None
-        assert self._ourId is not None
+        assert self._ourId is not None and self._ourId != -1
 
         with self:
             (attach_req_d, apiatt) = self._get_attachments_data()

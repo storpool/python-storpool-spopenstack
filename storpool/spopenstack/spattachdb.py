@@ -260,3 +260,5 @@ class AttachDB(splocked.SPLockedJSONDB):
                     assert count > 0
                     time.sleep(0.2)
                     count -= 1
+                else:
+                    raise

@@ -256,7 +256,10 @@ class AttachDB(splocked.SPLockedJSONDB):
                     )
                 break
             except spapi.ApiError as e:
-                if e.name == "invalidParam" and "is open at" in e.desc:
+                if (
+                    e.name in ("busy", "invalidParam")
+                    and "is open at" in e.desc
+                ):
                     assert count > 0
                     time.sleep(0.2)
                     count -= 1

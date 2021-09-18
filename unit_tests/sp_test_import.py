@@ -22,7 +22,7 @@ import sys
 if sys.version_info[0] >= 3:
     from importlib import machinery
 else:
-    import imp
+    import imp  # pylint: disable=deprecated-module
 
 try:
     from typing import Any, List, Optional, Tuple

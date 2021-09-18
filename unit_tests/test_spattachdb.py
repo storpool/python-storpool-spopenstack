@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" Test the classes in the storpool.spopenstack.spattachdb module. """
+"""Test the classes in the storpool.spopenstack.spattachdb module."""
 
 from __future__ import print_function
 
@@ -54,12 +54,12 @@ from storpool.spopenstack import spattachdb  # noqa: E402
 def with_attachdb(
     func,  # type: Callable[[utils.pathlib.Path, spattachdb.AttachDB], None]
 ):  # type: (...) -> Callable[[], None]
-    """ Prepare the environment for an AttachDB test. """
+    """Prepare the environment for an AttachDB test."""
 
     @utils.with_tempdir
     def wrapped(tempd):
         # type: (utils.pathlib.Path) -> None
-        """ Create a couple of objects, invoke the function. """
+        """Create a couple of objects, invoke the function."""
         tempf = tempd / "attach.json"
         tempf.write_text(u"{}", encoding="UTF-8")
 
@@ -75,7 +75,7 @@ def with_attachdb(
 @with_attachdb
 def test_trivial(tempf, att):
     # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
-    """ Test some trivial behavior of the AttachDB class. """
+    """Test some trivial behavior of the AttachDB class."""
     cfg = att.config()
     assert isinstance(cfg, spconfig.SPConfig)
     cfg_second = att.config()
@@ -128,21 +128,21 @@ def test_trivial(tempf, att):
 def test_attach_and_wait(_tempf, att):
     # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     # pylint: disable=protected-access
-    """ Test the "wait for the volume to be attached" method. """
+    """Test the "wait for the volume to be attached" method."""
     volname = att.volumeName("beef")
     spname = "/dev/storpool/" + volname
     state = {"count": 0}
 
     def mock_exists(path):
         # type: (str) -> bool
-        """ Make sure os.path.exists() is called for the right volume. """
+        """Make sure os.path.exists() is called for the right volume."""
         assert path == spname
         state["count"] += 1
         return False
 
     def mock_sleep(interval):
         # type: (int) -> None
-        """ No need to waste time sleeping. """
+        """No need to waste time sleeping."""
         assert interval > 0
         assert interval < 10
 
@@ -171,7 +171,7 @@ def test_attach_and_wait(_tempf, att):
 def test_detach_and_wait(_tempf, att):
     # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
     # pylint: disable=protected-access
-    """ Test the "wait for a volume to go away" method. """
+    """Test the "wait for a volume to go away" method."""
     client = 42
     volname = att.volumeName("beef")
     state = {"count": 0}
@@ -179,7 +179,7 @@ def test_detach_and_wait(_tempf, att):
 
     def mock_reassign(json):
         # type: (List[spapi.AttachmentDescDict]) -> None
-        """ Mock a volumesReassign() invocation. """
+        """Mock a volumesReassign() invocation."""
         assert state["count"] < 11
         expected["force"] = state["count"] == 10
         assert (state["count"], json) == (state["count"], [expected])
@@ -197,7 +197,7 @@ def test_detach_and_wait(_tempf, att):
 
     def mock_sleep(interval):
         # type: (int) -> None
-        """ No need to waste time sleeping. """
+        """No need to waste time sleeping."""
         assert interval > 0
         assert interval < 10
 
@@ -248,7 +248,7 @@ def compare_detach(item):
 @with_attachdb
 def test_sync(tempf, att):
     # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
-    """ Test the main purpose of AttachDB: the sync() method. """
+    """Test the main purpose of AttachDB: the sync() method."""
 
     voldata = {
         "a": {"id": "a", "volume": "os-vol-a", "volsnap": False, "rights": 2},
@@ -377,7 +377,10 @@ def test_sync(tempf, att):
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
             ),
             spapi.AttachmentDesc(
-                volume="os-vol-extra", client=42, snapshot=False, rights="rw",
+                volume="os-vol-extra",
+                client=42,
+                snapshot=False,
+                rights="rw",
             ),
             spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
@@ -414,7 +417,10 @@ def test_sync(tempf, att):
                 rights="rw",
             ),
             spapi.AttachmentDesc(
-                volume="os-vol-extra", client=42, snapshot=False, rights="rw",
+                volume="os-vol-extra",
+                client=42,
+                snapshot=False,
+                rights="rw",
             ),
             spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"
@@ -445,7 +451,10 @@ def test_sync(tempf, att):
                 volume="os-vol-a", client=41, snapshot=False, rights="rw"
             ),
             spapi.AttachmentDesc(
-                volume="os-vol-extra", client=42, snapshot=False, rights="rw",
+                volume="os-vol-extra",
+                client=42,
+                snapshot=False,
+                rights="rw",
             ),
             spapi.AttachmentDesc(
                 volume="os-snap-b", client=42, snapshot=True, rights="ro"

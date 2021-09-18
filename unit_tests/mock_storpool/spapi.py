@@ -26,7 +26,7 @@ except ImportError:
 
 # pylint: disable=too-few-public-methods
 class ApiError(Exception):
-    """ Mock the class for errors returned by API requests. """
+    """Mock the class for errors returned by API requests."""
 
     def __init__(self, status, json=None):
         # type: (ApiError, Any, Optional[Dict[str, Dict[str, Any]]]) -> None
@@ -54,7 +54,7 @@ class ApiError(Exception):
 
 
 class VolumeSummary(object):
-    """ Mock an API volume. """
+    """Mock an API volume."""
 
     def __init__(self, name):
         # type: (VolumeSummary) -> None
@@ -62,7 +62,7 @@ class VolumeSummary(object):
 
 
 class SnapshotSummary(object):
-    """ Mock an API snapshot. """
+    """Mock an API snapshot."""
 
     def __init__(self, name):
         # type: (SnapshotSummary) -> None
@@ -70,7 +70,7 @@ class SnapshotSummary(object):
 
 
 class AttachmentDesc(object):
-    """ Mock an API record about an attached volume or snapshot. """
+    """Mock an API record about an attached volume or snapshot."""
 
     def __init__(self, volume, client, snapshot, rights):
         # type: (AttachmentDesc, str, int, str, str) -> None
@@ -81,11 +81,11 @@ class AttachmentDesc(object):
 
 
 class Api(object):
-    """ Mock the API bindings class. """
+    """Mock the API bindings class."""
 
     def __init__(self, host, port, auth):
         # type: (Api, str, int, str) -> None
-        """ Initialize an API bindings object. """
+        """Initialize an API bindings object."""
         self.host = host
         self.port = port
         self.auth = auth
@@ -98,7 +98,7 @@ class Api(object):
     @classmethod
     def fromConfig(cls, cfg, **kwargs):  # pylint: disable=invalid-name
         # type: (Dict[str, str], Dict[str, Any]) -> Api
-        """ Initialize an API bindings object with the supplied config. """
+        """Initialize an API bindings object with the supplied config."""
         return cls(  # type: ignore
             host=cfg["SP_API_HTTP_HOST"],
             port=int(cfg["SP_API_HTTP_PORT"]),
@@ -108,20 +108,20 @@ class Api(object):
 
     def volumesReassign(self, json):  # pylint: disable=invalid-name
         # type: (Api, List[AttachmentDescDict]) -> None
-        """ Record the arguments passed to a volumesReassign() call. """
+        """Record the arguments passed to a volumesReassign() call."""
         self.reassign.append(json)
 
     def attachmentsList(self):  # pylint: disable=invalid-name
         # type: (Api) -> List[AttachmentDesc]
-        """ Return the list of attachments specified by the test. """
+        """Return the list of attachments specified by the test."""
         return list(self.attachments)
 
     def volumesList(self):  # pylint: disable=invalid-name
         # type: (Api) -> List[VolumeSummary]
-        """ Return the list of volumes specified by the test. """
+        """Return the list of volumes specified by the test."""
         return list(self.volumes)
 
     def snapshotsList(self):  # pylint: disable=invalid-name
         # type: (Api) -> List[SnapshotSummary]
-        """ Return the list of snapshots specified by the test. """
+        """Return the list of snapshots specified by the test."""
         return list(self.snapshots)

@@ -24,7 +24,7 @@ except ImportError:
 
 def get_config_dictionary():
     # type: () -> Dict[str, str]
-    """ Return the dictionary to be used for configuration. """
+    """Return the dictionary to be used for configuration."""
     return {
         "SP_OURID": "42",
         "SP_API_HTTP_HOST": "localhost",
@@ -35,7 +35,7 @@ def get_config_dictionary():
 
 # pylint: disable=too-few-public-methods
 class SPConfig(object):
-    """ Mock the SPConfig class. """
+    """Mock the SPConfig class."""
 
     def __init__(self):
         # type: (SPConfig) -> None
@@ -43,10 +43,10 @@ class SPConfig(object):
 
     def __getitem__(self, key):
         # type: (SPConfig, str) -> str
-        """ Return a configuration value. """
+        """Return a configuration value."""
         return self._dict[key]
 
     def get(self, key, default=None):
         # type: (SPConfig, str, Optional[str]) -> Optional[str]
-        """ Return a configuration value with a fallback. """
+        """Return a configuration value with a fallback."""
         return self._dict.get(key, default)

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" Utility functions for storpool.spopenstack unit tests. """
+"""Utility functions for storpool.spopenstack unit tests."""
 
 import types  # pylint: disable=unused-import
 import sys
@@ -36,7 +36,7 @@ def _find_mock_file(
     module,  # type: str
     path,  # type: Optional[List[str]]
 ):  # type: (...) -> Optional[Tuple[str, utils.pathlib.Path]]
-    """ Locate the unit_tests.mock_storpool modules. """
+    """Locate the unit_tests.mock_storpool modules."""
     if module in ("storpool.spapi", "storpool.spconfig"):
         if not path:
             return None
@@ -56,11 +56,11 @@ def _find_mock_file(
 
 
 class SPTestModuleFinder(object):
-    """ Mimic the storpool namespace layout for the unit tests. """
+    """Mimic the storpool namespace layout for the unit tests."""
 
     def __init__(self, name, mock_file):
         # type: (SPTestModuleFinder, str, utils.pathlib.Path) -> None
-        """ Initialize a loader. """
+        """Initialize a loader."""
         self.name = name
         self.mock_file = mock_file
 
@@ -73,7 +73,7 @@ class SPTestModuleFinder(object):
             path=None,  # type: Optional[List[str]]
             _target=None,  # type: Any
         ):  # type: (...) -> Optional[machinery.ModuleSpec]
-            """ Locate a (possibly mock) module to load for Python 3. """
+            """Locate a (possibly mock) module to load for Python 3."""
             data = _find_mock_file(module, path)
             if data is None:
                 return None
@@ -87,7 +87,7 @@ class SPTestModuleFinder(object):
 
         def load_module(self, name):
             # type: (SPTestModuleFinder, str) -> types.ModuleType
-            """ Load the located stub modules. """
+            """Load the located stub modules."""
             mock_path = self.mock_file.parent
             module_info = imp.find_module(self.name, [str(mock_path)])
             module = imp.load_module(name, *module_info)  # type: ignore
@@ -99,7 +99,7 @@ class SPTestModuleFinder(object):
             module,  # type: str
             path=None,  # type: Optional[List[str]]
         ):  # type: (...) -> Optional[SPTestModuleFinder]
-            """ Locate a (possibly mock) module to load for Python 2. """
+            """Locate a (possibly mock) module to load for Python 2."""
             data = _find_mock_file(module, path)
             if data is None:
                 return None

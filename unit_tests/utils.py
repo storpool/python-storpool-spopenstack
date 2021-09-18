@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" Utility functions for storpool.spopenstack unit tests. """
+"""Utility functions for storpool.spopenstack unit tests."""
 
 from __future__ import print_function
 
@@ -35,11 +35,11 @@ except ImportError:
 # Ah great, Python 2.x's tempfile does not have TemporaryDirectory
 def with_tempdir(func):
     # type: (Callable[[pathlib.Path], None]) -> Callable[[], None]
-    """ Decorate a function, create a temporary directory. """
+    """Decorate a function, create a temporary directory."""
 
     def wrapper():
         # type: () -> None
-        """ Create a temporary directory, invoke the target function. """
+        """Create a temporary directory, invoke the target function."""
         tempd = pathlib.Path(tempfile.mkdtemp())
         try:
             return func(tempd)

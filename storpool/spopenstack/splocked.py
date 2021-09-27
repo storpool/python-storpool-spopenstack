@@ -1,6 +1,6 @@
 #
 # -
-# Copyright (c) 2014, 2015, 2019, 2020  StorPool.
+# Copyright (c) 2014, 2015, 2019 - 2021  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +38,10 @@ except ImportError:
 
 
 rlock = threading.RLock()
+
+
+class SPLockedFileError(Exception):
+    """An error that occurred while locking the file."""
 
 
 class SPLockedFile(object):
@@ -81,21 +85,29 @@ class SPLockedFile(object):
             return
 
         assert self._lockfd is None
-        for x in range(100):
-            try:
-                f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0o600)
-                break
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    time.sleep(0.1)
-                else:
-                    raise
-        else:
-            raise Exception(
-                "Could not lock the {f} file (using {fl})".format(
-                    f=self._fname, fl=self._lockfname
+        f = None
+        try:
+            for x in range(100):
+                try:
+                    f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0o600)
+                    break
+                except OSError as e:
+                    if e.errno == errno.EEXIST:
+                        time.sleep(0.1)
+                    else:
+                        raise
+            else:
+                raise SPLockedFileError(
+                    "Could not lock the {f} file (using {fl})".format(
+                        f=self._fname, fl=self._lockfname
+                    )
                 )
-            )
+        except Exception:
+            if f is None:
+                self._count -= 1
+                rlock.release()
+            raise
+
         assert f is not None
         self._lockfd = f
 

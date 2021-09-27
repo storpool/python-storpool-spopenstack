@@ -20,6 +20,18 @@ Version history
 3.1.0
 -----
 
+- Reraise unexpected StorPool API errors instead of ignoring them
+- Handle the StorPool API returning a "busy" error code instead of
+  the "invalidParam" one previously
+- Fix attempting to lock a file for the second time after the first one
+  was unsuccessful
+- Use file locking, not a separate lockfile; the attachment JSON file
+  must now exist, but it is usually created as part of setting up
+  the Cinder and Nova group membership anyway
+- Add the year 2021 to the copyright notices
+- Reformat the source using version 21 of the black tool
+- Disable some more pylint diagnostics because of Python 2 compatibility
+
 3.0.1
 -----
 

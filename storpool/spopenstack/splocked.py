@@ -21,6 +21,7 @@ A trivial JSON key/value store protected by a lockfile.
 """
 
 import errno
+import fcntl
 import json
 import os
 import posix
@@ -48,8 +49,7 @@ class SPLockedFile(object):
     def __init__(self, fname):
         # type: (SPLockedFile, str) -> None
         self._fname = fname
-        self._lockfname = self._fname + ".splock"
-        self._lockfd = None  # type: Optional[int]
+        self._fd = None  # type: Optional[int]
         self._last = None  # type: Optional[posix.stat_result]
         self._count = 0
 
@@ -75,41 +75,54 @@ class SPLockedFile(object):
             or st.st_size != last.st_size
         )
 
+    def _open_and_lock(self):
+        # type: (SPLockedFile) -> Optional[int]
+        """Try to open the file and lock it."""
+        locked = False
+        f = os.open(self._fname, os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            locked = True
+            return f
+        except IOError as err:
+            if err.errno == errno.EAGAIN:
+                return None
+            raise
+        finally:
+            if not locked:
+                os.close(f)
+
     def __enter__(self):
         # type: (SPLockedFile) -> None
         rlock.acquire()
         self._count += 1
 
         if self._count > 1:
-            assert self._lockfd is not None
+            assert self._fd is not None
             return
 
-        assert self._lockfd is None
+        assert self._fd is None
         f = None
         try:
             for x in range(100):
-                try:
-                    f = os.open(self._lockfname, os.O_CREAT | os.O_EXCL, 0o600)
+                f = self._open_and_lock()
+                if f is not None:
                     break
-                except OSError as e:
-                    if e.errno == errno.EEXIST:
-                        time.sleep(0.1)
-                    else:
-                        raise
+                time.sleep(0.1)
             else:
                 raise SPLockedFileError(
-                    "Could not lock the {f} file (using {fl})".format(
-                        f=self._fname, fl=self._lockfname
-                    )
+                    "Could not lock the {f} file".format(f=self._fname)
                 )
         except Exception:
-            if f is None:
-                self._count -= 1
-                rlock.release()
+            if f is not None:
+                os.close(f)
+
+            self._count -= 1
+            rlock.release()
             raise
 
         assert f is not None
-        self._lockfd = f
+        self._fd = f
 
     def __exit__(
         self,  # type: SPLockedFile
@@ -122,9 +135,9 @@ class SPLockedFile(object):
             rlock.release()
             return
 
-        assert self._lockfd is not None
-        os.close(self._lockfd)
-        self._lockfd = None
+        assert self._fd is not None
+        os.close(self._fd)
+        self._fd = None
 
         # If no exceptions have been raised, update the stat(2) cache
         if etype is None:
@@ -133,25 +146,32 @@ class SPLockedFile(object):
             except OSError:
                 self._last = None
 
-        try:
-            os.remove(self._lockfname)
-        except OSError:
-            pass
-
         self._count -= 1
         rlock.release()
 
     def jsload(self):
         # type: (SPLockedFile) -> Any
         with self:
-            with open(self._fname, "r") as f:
-                return json.loads(f.read())
+            os.lseek(self._fd, 0, os.SEEK_SET)
+            contents = b""
+            while True:
+                chunk = os.read(self._fd, 8192)
+                if not chunk:
+                    break
+                contents += chunk
+
+            return json.loads(contents)
 
     def jsdump(self, obj):
         # type: (SPLockedFile, Any) -> None
         with self:
-            with open(self._fname, "w") as f:
-                f.write(json.dumps(obj))
+            contents = json.dumps(obj).encode("UTF-8")
+
+            os.lseek(self._fd, 0, os.SEEK_SET)
+            os.ftruncate(self._fd, 0)
+            while contents:
+                written = os.write(self._fd, contents)
+                contents = contents[written:]
 
 
 class SPLockedJSONDB(SPLockedFile):

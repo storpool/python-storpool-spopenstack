@@ -16,6 +16,7 @@
 #
 """Test the classes in the storpool.spopenstack.splocked module."""
 
+import errno
 import json
 import sys
 
@@ -23,6 +24,8 @@ try:
     from typing import Text
 except ImportError:
     pass
+
+import pytest
 
 from . import utils
 from .mock_storpool import spapi, spconfig
@@ -43,21 +46,21 @@ from storpool.spopenstack import splocked  # noqa: E402
 def test_lockfile(tempd):
     # type: (utils.pathlib.Path) -> None
     """Test that an SPLockedFile object behaves sensibly."""
-    tempf = tempd / "testfile.json"
-    lockf = tempd / (tempf.name + ".splock")
     assert tempd.is_dir()
-    assert not tempf.exists()
-    assert not lockf.exists()
 
+    tempf = tempd / "testfile.json"
     fname = str(tempf.absolute())
+
+    assert not tempf.exists()
+    contents = u"stuff\n"
+    tempf.write_text(contents, encoding="UTF-8")
 
     def mock_json_loads(loaded):
         # type: (str) -> int
         """Mock json.loads() on the temporary file."""
         assert tempf.is_file()
         assert tempf.stat().st_size != 0
-        assert lockf.is_file()
-        assert loaded == "stuff\n"
+        assert loaded == contents.encode("UTF-8")
         return 616
 
     def mock_json_dumps(dumped):
@@ -65,33 +68,25 @@ def test_lockfile(tempd):
         """Mock json.dumps() on the temporary file."""
         assert tempf.is_file()
         assert tempf.stat().st_size == 0
-        assert lockf.is_file()
         assert dumped == 617
         return u"more stuff\n"
 
     locked = splocked.SPLockedFile(fname)
     with locked:
-        assert not tempf.exists()
-        assert lockf.is_file()
+        assert tempf.read_text(encoding="UTF-8") == contents
 
-    assert not tempf.exists()
-    assert not lockf.exists()
+    assert tempf.read_text(encoding="UTF-8") == contents
 
-    tempf.write_text(u"stuff\n", encoding="UTF-8")
-    assert tempf.is_file()
-    assert tempf.stat().st_size != 0
     with mock.patch("json.loads", new=mock_json_loads):
+        assert tempf.read_text(encoding="UTF-8") == contents
         assert locked.jsload() == 616
 
-    assert tempf.is_file()
-    assert not lockf.exists()
+    assert tempf.read_text(encoding="UTF-8") == contents
 
-    tempf.unlink()
-    assert not tempf.exists()
+    tempf.write_text(u"", encoding="UTF-8")
     with mock.patch("json.dumps", new=mock_json_dumps):
         locked.jsdump(617)
     assert tempf.is_file()
-    assert not lockf.exists()
     assert tempf.read_text(encoding="UTF-8") == "more stuff\n"
 
 
@@ -100,30 +95,27 @@ def test_jsondb(tempd):
     # type: (utils.pathlib.Path) -> None
     """Test the SPLockedJSONDB class methods."""
     tempf = tempd / "db.json"
-    lockf = tempd / (tempf.name + ".splock")
-
-    def assert_none():
-        # type: () -> None
-        """Make sure none of the files exist."""
-        assert not tempf.exists()
-        assert not lockf.exists()
 
     assert tempd.is_dir()
-    assert_none()
+    assert not tempf.exists()
 
     jdb = splocked.SPLockedJSONDB(str(tempf.absolute()))
-    assert_none()
+    assert not tempf.exists()
 
     def assert_db():
         # type: () -> None
         """Make sure the database file exists and is not empty."""
         assert tempf.is_file()
         assert tempf.stat().st_size != 0
-        assert not lockf.exists()
         assert json.loads(tempf.read_text(encoding="UTF-8")) == jdb.get()
 
+    with pytest.raises((IOError, OSError)) as err:
+        jdb.get()
+    assert err.value.errno == errno.ENOENT
+    assert not tempf.exists()
+
+    tempf.write_text(u"{}", encoding="UTF-8")
     assert jdb.get() == {}
-    assert_none()
 
     jdb.add(u"a", u"value")
     assert_db()

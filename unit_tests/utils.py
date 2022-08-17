@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 - 2021  StorPool.
+# Copyright (c) 2019 - 2022  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,12 +19,13 @@
 from __future__ import print_function
 
 import subprocess
+import sys
 import tempfile
 
-try:
-    import pathlib2 as pathlib
-except ImportError:
-    import pathlib  # type: ignore
+if sys.version_info[0] >= 3:
+    import pathlib
+else:
+    import pathlib2 as pathlib  # type: ignore
 
 try:
     from typing import Callable
@@ -47,3 +48,6 @@ def with_tempdir(func):
             subprocess.call(["rm", "-rf", "--", str(tempd)])
 
     return wrapper
+
+
+__all__ = ["pathlib", "with_tempdir"]

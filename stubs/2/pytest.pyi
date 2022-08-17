@@ -1,4 +1,4 @@
-# Copyright (c) 2018  Peter Pentchev
+# Copyright (c) 2018, 2022  Peter Pentchev
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 
 from types import TracebackType
 
-from typing import Generic, Optional, Type, TypeVar
+from typing import Generic, Optional, Tuple, Type, TypeVar, Union
 
 _E = TypeVar('_E', bound=BaseException)
 
@@ -42,4 +42,4 @@ class _RaisesContext(Generic[_E]):
                  exc_tb: Optional[TracebackType]
                  ) -> bool: ...
 
-def raises(exc: Type[_E]) -> _RaisesContext[_E]: ...
+def raises(exc: Union[Type[_E], Tuple[Type[_E], ...]]) -> _RaisesContext[_E]: ...

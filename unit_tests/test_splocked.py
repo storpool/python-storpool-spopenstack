@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 - 2021  StorPool.
+# Copyright (c) 2019 - 2022  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,7 @@ def test_lockfile(tempd):
     tempf.write_text(contents, encoding="UTF-8")
 
     def mock_json_loads(loaded):
-        # type: (str) -> int
+        # type: (bytes) -> int
         """Mock json.loads() on the temporary file."""
         assert tempf.is_file()
         assert tempf.stat().st_size != 0

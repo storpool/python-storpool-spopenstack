@@ -1,6 +1,6 @@
 #
 # -
-# Copyright (c) 2014, 2015, 2019 - 2021  StorPool.
+# Copyright (c) 2014, 2015, 2019 - 2022  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,6 +152,7 @@ class SPLockedFile(object):
     def jsload(self):
         # type: (SPLockedFile) -> Any
         with self:
+            assert self._fd is not None
             os.lseek(self._fd, 0, os.SEEK_SET)
             contents = b""
             while True:
@@ -165,6 +166,7 @@ class SPLockedFile(object):
     def jsdump(self, obj):
         # type: (SPLockedFile, Any) -> None
         with self:
+            assert self._fd is not None
             contents = json.dumps(obj).encode("UTF-8")
 
             os.lseek(self._fd, 0, os.SEEK_SET)

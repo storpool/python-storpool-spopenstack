@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 - 2021  StorPool.
+# Copyright (c) 2019 - 2022  StorPool.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -269,7 +269,7 @@ def test_sync(tempf, att):
 
     def run_sync(  # pylint: disable=too-many-arguments
         args,  # type: Tuple[str, Optional[str]]
-        expected,  # type: Tuple[List[mock.call], List[mock.call]]
+        expected,  # type: Tuple[List[mock._Call], List[mock._Call]]
         volumes=None,  # type: Optional[List[spapi.VolumeSummary]]
         snapshots=None,  # type: Optional[List[spapi.SnapshotSummary]]
         attachments=None,  # type: Optional[List[spapi.AttachmentDesc]]
@@ -284,11 +284,15 @@ def test_sync(tempf, att):
                 att.api().attachments = attachments if attachments else []
                 att.sync(args[0], args[1])
                 assert sorted(
-                    att_wait.call_args_list, key=compare_attach
-                ) == sorted(expected[0], key=compare_attach)
+                    att_wait.call_args_list, key=compare_attach  # type: ignore
+                ) == sorted(
+                    expected[0], key=compare_attach  # type: ignore
+                )
                 assert sorted(
-                    det_wait.call_args_list, key=compare_detach
-                ) == sorted(expected[1], key=compare_detach)
+                    det_wait.call_args_list, key=compare_detach  # type: ignore
+                ) == sorted(
+                    expected[1], key=compare_detach  # type: ignore
+                )
 
         if expected_json is None:
             assert jsonmod.loads(tempf.read_text(encoding="UTF-8")) == voldata

@@ -1,0 +1,9 @@
+[tool.black]
+line-length = 79
+
+[tool.mypy]
+strict = true
+no_warn_unused_ignores = true
+
+[tool.pylint.main]
+disable = "useless-object-inheritance,bad-continuation,super-with-arguments,redundant-u-string-prefix,consider-using-f-string"

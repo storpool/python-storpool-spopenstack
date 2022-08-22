@@ -497,3 +497,31 @@ def test_ourid_required(tempf, att):
         with pytest.raises(KeyError):
             raise NotImplementedError(res["SP_OURID"])
         assert natt._ourId == -1
+
+
+@with_attachdb
+def test_override_config(tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
+    """Test the "do not read storpool.conf at all" functionality."""
+    # pylint: disable=protected-access
+    assert att.config()["SP_OURID"] == "42"
+
+    def no_config_dictionary():
+        # type: () -> None
+        """Make sure spconfig.get_config_dictionary() is never invoked."""
+        raise NotImplementedError("This function should never be invoked")
+
+    ncfg = {
+        "SP_API_HTTP_HOST": "127.0.0.53",
+        "SP_API_HTTP_PORT": "82",
+        "SP_AUTH_TOKEN": "616",
+    }
+    with mock.patch(
+        "storpool.spconfig.get_config_dictionary", new=no_config_dictionary
+    ):
+        natt = spattachdb.AttachDB(
+            fname=str(tempf), log=att.LOG, override_config=ncfg
+        )
+        assert natt._ourId is None
+        res = natt.config()
+        assert dict(res.items()) == ncfg

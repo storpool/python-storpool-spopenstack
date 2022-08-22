@@ -52,23 +52,32 @@ LOCKFILE = "/var/spool/openstack-storpool/openstack-attach.json"
 
 
 class AttachDB(splocked.SPLockedJSONDB):
-    def __init__(self, log, fname=LOCKFILE):
-        # type: (AttachDB, logging.Logger, str) -> None
+    def __init__(
+        self,  # type: AttachDB
+        log,  # type: logging.Logger
+        fname=LOCKFILE,  # type: str
+        override_config=None,  # type: Optional[Dict[str, str]]
+    ):  # type: (...) -> None
         super(AttachDB, self).__init__(fname)
         self._api = None  # type: Optional[spapi.Api]
         self._config = None  # type: Optional[spconfig.SPConfig]
         self._ourId = None  # type: Optional[int]
+        self._override_config = override_config
         self._volume_prefix = None  # type: Optional[str]
         self.LOG = log
 
     def config(self):
         # type: (AttachDB) -> spconfig.SPConfig
         if self._config is None:
-            self._config = spconfig.SPConfig()
+            self._config = spconfig.SPConfig(
+                override_config=self._override_config
+            )
+
             try:
                 self._ourId = int(self._config["SP_OURID"])
             except KeyError:
                 self._ourId = -1
+
         return self._config
 
     def api(self):

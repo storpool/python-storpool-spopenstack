@@ -17,7 +17,7 @@
 """ Mock the storpool.spconfig.SPConfig class for testing """
 
 try:
-    from typing import Dict, Optional
+    from typing import Dict, Iterator, Optional, Tuple
 except ImportError:
     pass
 
@@ -37,9 +37,12 @@ def get_config_dictionary():
 class SPConfig(object):
     """Mock the SPConfig class."""
 
-    def __init__(self):
-        # type: (SPConfig) -> None
-        self._dict = get_config_dictionary()
+    def __init__(self, override_config=None):
+        # type: (SPConfig, Optional[Dict[str, str]]) -> None
+        if override_config is None:
+            self._dict = get_config_dictionary()
+        else:
+            self._dict = override_config
 
     def __getitem__(self, key):
         # type: (SPConfig, str) -> str
@@ -50,3 +53,9 @@ class SPConfig(object):
         # type: (SPConfig, str, Optional[str]) -> Optional[str]
         """Return a configuration value with a fallback."""
         return self._dict.get(key, default)
+
+    def items(self):
+        # type: (SPConfig) -> Iterator[Tuple[str, str]]
+        """Return an iterator over the configuration values."""
+        # Forget about Python 2.x's non-iterator implementation.
+        return iter(self._dict.items())

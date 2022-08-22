@@ -474,3 +474,26 @@ def test_sync(tempf, att):
             ),
         ],
     )
+
+
+@with_attachdb
+def test_ourid_required(tempf, att):
+    # type: (utils.pathlib.Path, spattachdb.AttachDB) -> None
+    """Test whether required_ourid is handled correctly."""
+    # pylint: disable=protected-access
+    assert att._ourId is None
+    res = att.config()
+    assert res["SP_OURID"] == "42"
+    assert att._ourId == 42
+
+    cfg_dict = spconfig.get_config_dictionary()
+    del cfg_dict["SP_OURID"]
+    with mock.patch(
+        "storpool.spconfig.get_config_dictionary", new=lambda: cfg_dict
+    ):
+        natt = spattachdb.AttachDB(fname=str(tempf), log=att.LOG)
+        assert natt._ourId is None
+        res = natt.config()
+        with pytest.raises(KeyError):
+            raise NotImplementedError(res["SP_OURID"])
+        assert natt._ourId == -1

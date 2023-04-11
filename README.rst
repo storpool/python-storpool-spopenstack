@@ -17,6 +17,28 @@ each hypervisor node to be both a storage and a compute node simultaneously.
 Version history
 ===============
 
+3.2.0
+-----
+
+- Do not require `SP_OURID` to be defined in the StorPool configuration
+  so that we can support iSCSI-only deployments
+- Add the optional `override_config` dictionary to the AttachDB constructor
+  to skip reading the StorPool configuration files altogether. This should
+  simplify isolated deployments and allow the StorPool OpenStack helper
+  tools to be configured with settings read from the OpenStack config
+  files only
+- Depend on `storpool >= 7.2.0` for `override_config` support in
+  the `SPConfig` configuration class
+- Depend on `storpool < 8`, since incompatible changes are planned in
+  the StorPool API bindings library itself
+- Minor refactoring so that stricter type checking can be enabled
+- Build and testing infrastructure changes:
+    - clamp the versions of some Python build tools and required libraries;
+      add both lower and upper version constraints
+    - put Tox environment commands on separate lines
+    - move the configuration of some static checker tools to
+      the pyproject.toml file
+
 3.1.0
 -----
 
